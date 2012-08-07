@@ -15,14 +15,47 @@ void testApp::setup() {
 void testApp::update() {
 	sick.update();
 	if(sick.isFrameNew()) {
+		// build samples vector for all points within the bounds
+		unsigned short minDistance = 100, maxDistance = 1000;
+		vector<cv::Point2f> samples;
+		const vector<unsigned short>& distance = sick.getDistanceFirst();
+		const vector<ofVec2f>& points = sick.getPointsFirst();
+		for(int i = 0; i < points.size(); i++) {
+			if(distance[i] < maxDistance && distance[i] > minDistance) {
+				samples.push_back(toCv(points[i]));
+			}
+		}
+		Mat samplesMat = Mat(samples).reshape(1);
+		
+		int maxClusterCount = 6;
+		clusters.resize(maxClusterCount);
+		for(int clusterCount = 1; clusterCount < maxClusterCount; clusterCount++) {
+			Mat labels, centersMat;
+			if(samples.size() > clusterCount) {
+				double compactness = cv::kmeans(samplesMat, clusterCount, labels, TermCriteria(), 8, KMEANS_PP_CENTERS, centersMat);
+			}
+			vector<cv::Point2f>& centers = clusters[clusterCount];
+			centers.clear();
+			centers = centersMat.reshape(2);
+		}
 	}
 }
 
 void testApp::draw() {
 	ofBackground(0);
 	
-	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, 2, true);	
+	ofPushMatrix();
+	ofTranslate(20, 20);
+	for(int i = 1; i < clusters.size(); i++) {
+		ofSetColor(ofColor::fromHsb(ofMap(i, 0, clusters.size(), 0, 255), 255, 255));
+		ofCircle(0, 0, 7);
+		ofDrawBitmapString(ofToString(i) + " clusters", -4, 4);
+		ofTranslate(0, 20);
+	}
+	ofPopMatrix();
+		
 	ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, 2, true);
 	
 	int count = 10;
 	ofNoFill();
@@ -45,6 +78,13 @@ void testApp::draw() {
 	ofScale(scale, scale);
 	ofSetColor(ofColor::white);
 	sick.draw();
+	for(int i = 0; i < clusters.size(); i++) {
+		ofSetColor(ofColor::fromHsb(ofMap(i, 0, clusters.size(), 0, 255), 255, 255));
+		for(int j = 0; j < clusters[i].size(); j++) {
+			ofVec2f center = toOf(clusters[i][j]);
+			ofCircle(center, 100);
+		}
+	}
 	ofPopMatrix();
 }
 
