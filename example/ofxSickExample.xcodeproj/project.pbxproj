@@ -15,6 +15,7 @@
 		0A2CEDF815AE174000674655 /* ofxCvHaarFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A2CEDEB15AE174000674655 /* ofxCvHaarFinder.cpp */; };
 		0A2CEDF915AE174000674655 /* ofxCvImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A2CEDED15AE174000674655 /* ofxCvImage.cpp */; };
 		0A2CEDFA15AE174000674655 /* ofxCvShortImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A2CEDF015AE174000674655 /* ofxCvShortImage.cpp */; };
+		276C044015D09F700005D1F1 /* ofxSick.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 276C043E15D09F700005D1F1 /* ofxSick.cpp */; };
 		277109E115D0879100277BEA /* LMS1xx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277109DE15D0879100277BEA /* LMS1xx.cpp */; };
 		BBAB23CB13894F3D00AA2426 /* GLUT.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = BBAB23BE13894E4700AA2426 /* GLUT.framework */; };
 		E4328149138ABC9F0047C5CB /* openFrameworksDebug.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E4328148138ABC890047C5CB /* openFrameworksDebug.a */; };
@@ -153,6 +154,8 @@
 		0A2CEDF015AE174000674655 /* ofxCvShortImage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxCvShortImage.cpp; sourceTree = "<group>"; };
 		0A2CEDF115AE174000674655 /* ofxCvShortImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxCvShortImage.h; sourceTree = "<group>"; };
 		0A2CEDF215AE174000674655 /* ofxOpenCv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxOpenCv.h; sourceTree = "<group>"; };
+		276C043E15D09F700005D1F1 /* ofxSick.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofxSick.cpp; path = ../src/ofxSick.cpp; sourceTree = SOURCE_ROOT; };
+		276C043F15D09F700005D1F1 /* ofxSick.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofxSick.h; path = ../src/ofxSick.h; sourceTree = SOURCE_ROOT; };
 		277109DE15D0879100277BEA /* LMS1xx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LMS1xx.cpp; path = ../libs/LMS1xx.cpp; sourceTree = SOURCE_ROOT; };
 		277109DF15D0879100277BEA /* LMS1xx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LMS1xx.h; path = ../libs/LMS1xx.h; sourceTree = SOURCE_ROOT; };
 		27710A1015D095C700277BEA /* RateTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RateTimer.h; path = src/RateTimer.h; sourceTree = SOURCE_ROOT; };
@@ -498,6 +501,8 @@
 		277109E015D0879100277BEA /* src */ = {
 			isa = PBXGroup;
 			children = (
+				276C043E15D09F700005D1F1 /* ofxSick.cpp */,
+				276C043F15D09F700005D1F1 /* ofxSick.h */,
 			);
 			name = src;
 			path = ../src;
@@ -686,6 +691,7 @@
 				0A2CEDF915AE174000674655 /* ofxCvImage.cpp in Sources */,
 				0A2CEDFA15AE174000674655 /* ofxCvShortImage.cpp in Sources */,
 				277109E115D0879100277BEA /* LMS1xx.cpp in Sources */,
+				276C044015D09F700005D1F1 /* ofxSick.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
