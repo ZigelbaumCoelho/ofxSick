@@ -40,11 +40,11 @@ protected:
 
 class ofxSickGrabber : public ofxSick {
 public:
-	~ofxSickGrabber();
 	
 protected:
 	LMS1xx laser;
 	
 	void connect();
+	void disconnect();
 	void threadedFunction();
 };

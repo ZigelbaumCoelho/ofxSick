@@ -60,57 +60,71 @@ void ofxSick::analyze() {
 }
 
 void ofxSickGrabber::connect() {
-	ofLogVerbose() << "Connecting to LMS.";
+	ofLogVerbose("ofxSick") << "Connecting.";
 	laser.connect("169.254.238.162");
 	if(!laser.isConnected()) {
-		ofLogError() << "Connection to LMS failed.";
+		ofLogError("ofxSick") << "Connection failed.";
 		return;
 	}
 	
-	ofLogVerbose() << "Logging in to LMS.";
+	ofLogVerbose("ofxSick") << "Logging in.";
 	laser.login();
-	laser.stopMeas();
 	
-	ofLogVerbose() << "Geting LMS scan configuration.";
-	scanCfg c = laser.getScanCfg();
-	ofLogVerbose() << "Scanning Frequency : " << c.scaningFrequency/100.0 << "Hz AngleResolution : " << c.angleResolution/10000.0 << "deg";
+	scanCfg targetCfg;
+	targetCfg.angleResolution = .5 * 1000;
+	targetCfg.scaningFrequency = 50 * 100;
+	targetCfg.startAngle = 0; // defaults to -45 * 10000.
+	targetCfg.stopAngle = 0; // defaults to 225 * 10000.
 	
-	c.angleResolution = 5000;
-	c.scaningFrequency = 5000;
+	ofLogVerbose("ofxSick") << "Geting current scan configuration.";
+	scanCfg curCfg = laser.getScanCfg();
 	
-	laser.setScanCfg(c);
+	if(curCfg.angleResolution != targetCfg.angleResolution ||
+		curCfg.scaningFrequency != targetCfg.scaningFrequency) {
+		ofLogVerbose("ofxSick") << "Setting new scan configuration.";
+		laser.setScanCfg(targetCfg);
+		ofLogVerbose("ofxSick") << "Updating current scan configuration.";
+		curCfg = laser.getScanCfg();
+	} else {
+		ofLogVerbose("ofxSick") << "LMS is already configured.";
+	}
 	
-	scanDataCfg cc;
-	cc.deviceName = false;
-	cc.encoder = 0;
-	cc.outputChannel = 3;
-	cc.remission = true;
-	cc.resolution = 0;
-	cc.position = false;
-	cc.outputInterval = 1;
+	ofLogVerbose("ofxSick") << curCfg.scaningFrequency/100. << "Hz at " << curCfg.angleResolution/10000. << "deg, from " << curCfg.startAngle/10000. << "deg to " << curCfg.stopAngle/10000. << "deg";
 	
-	laser.setScanDataCfg(cc);
+	scanDataCfg targetDataCfg;
+	targetDataCfg.deviceName = false;
+	targetDataCfg.encoder = 0;
+	targetDataCfg.outputChannel = 3;
+	targetDataCfg.remission = true;
+	targetDataCfg.resolution = 0;
+	targetDataCfg.position = false;
+	targetDataCfg.outputInterval = 1;
 	
-	int ret = 0;
-	ofLogVerbose() << "Start LMS measurments.";
+	ofLogVerbose("ofxSick") << "Setting scan data configuration.";
+	laser.setScanDataCfg(targetDataCfg);
+	
+	ofLogVerbose("ofxSick") << "Start measurments.";
 	laser.startMeas();
 	
-	ofLogVerbose() << "Wait for LMS ready status.";
-	ret = 0;
+	ofLogVerbose("ofxSick") << "Wait for ready status.";
+	int ret = 0, prevRet = 0;
 	while (ret != 7) {
 		ret = laser.queryStatus();
-		ofLogVerbose() << "LMS Status: " << ret;
-		ofSleepMillis(1000);
+		if(ret != prevRet) {
+			ofLogVerbose("ofxSick") << "Status: " << ret;
+		}
+		prevRet = ret;
+		ofSleepMillis(500);
 	}
-	ofLogVerbose() << "LMS is ready, starting continuous data transmission.";
+	ofLogVerbose("ofxSick") << "Ready, starting continuous data transmission.";
 	laser.scanContinous(1);
 }
 
-ofxSickGrabber::~ofxSickGrabber() {
-	ofLogVerbose() << "Stopping LMS continuous data transmission.";
+void ofxSickGrabber::disconnect() {
+	ofLogVerbose("ofxSick") << "Stopping continuous data transmission.";
 	laser.scanContinous(0);
 	laser.stopMeas();
-	ofLogVerbose() << "Disconnecting from LMS.";
+	ofLogVerbose("ofxSick") << "Disconnecting.";
 	laser.disconnect();
 }
 
@@ -127,6 +141,7 @@ void ofxSickGrabber::threadedFunction() {
 		newFrame = true;
 		unlock();
 	}
+	disconnect();
 }
 
 /*
