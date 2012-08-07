@@ -55,6 +55,7 @@ void ofxSick::analyze() {
 	points.clear();
 	for(int i = 0; i < distances.size(); i++) {
 		float theta = i * .5; // .5 is the angular resolution
+		theta += 225;
 		points.push_back(ofVec2f(distances[i], 0).rotate(theta));
 	}
 }
