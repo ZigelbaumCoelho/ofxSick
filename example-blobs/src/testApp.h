@@ -13,5 +13,5 @@ public:
 	void keyPressed(int key);
 	
 	ofxSickGrabber sick;
-	vector< vector<cv::Point2f> > clusters;
+	vector<cv::Point2f> clusters;
 };

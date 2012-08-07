@@ -3,6 +3,13 @@
 using namespace cv;
 using namespace ofxCv;
 
+// wrists are approximately 60-80mm in diameter
+// a closed hand extends about 100mm
+// a stretched hand can extend up to 200mm
+const float clusterRadius = 80; // 80mm radius is bigger than a closed hand, smaller than stretched
+const float ignoreAmount = .1; // ignore up to 10% of the points
+const int maxClusterCount = 12;
+
 void testApp::setup() {
 	ofSetVerticalSync(true);
 	ofSetFrameRate(120);
@@ -27,16 +34,25 @@ void testApp::update() {
 		}
 		Mat samplesMat = Mat(samples).reshape(1);
 		
-		int maxClusterCount = 6;
-		clusters.resize(maxClusterCount);
-		for(int clusterCount = 1; clusterCount < maxClusterCount; clusterCount++) {
-			Mat labels, centersMat;
+		clusters.clear();
+		for(int clusterCount = 1; clusterCount < maxClusterCount; clusterCount++) {			
 			if(samples.size() > clusterCount) {
-				double compactness = cv::kmeans(samplesMat, clusterCount, labels, TermCriteria(), 8, KMEANS_PP_CENTERS, centersMat);
+				Mat labelsMat, clustersMat;
+				double compactness = cv::kmeans(samplesMat, clusterCount, labelsMat, TermCriteria(), 8, KMEANS_PP_CENTERS, clustersMat);
+				clusters = clustersMat.reshape(2);
+				vector<int> labels = labelsMat;
+				int outside = 0;
+				for(int i = 0; i < samples.size(); i++) {
+					ofVec2f curCluster = toOf(clusters[labels[i]]);
+					ofVec2f curSample = toOf(samples[i]);
+					if(curSample.distance(curCluster) > clusterRadius) {
+						outside++;
+					}
+				}				
+				if(outside < samples.size() * ignoreAmount) {
+					break;
+				}
 			}
-			vector<cv::Point2f>& centers = clusters[clusterCount];
-			centers.clear();
-			centers = centersMat.reshape(2);
 		}
 	}
 }
@@ -46,14 +62,11 @@ void testApp::draw() {
 	
 	ofPushMatrix();
 	ofTranslate(20, 20);
-	for(int i = 1; i < clusters.size(); i++) {
-		ofSetColor(ofColor::fromHsb(ofMap(i, 0, clusters.size(), 0, 255), 255, 255));
-		ofCircle(0, 0, 7);
-		ofDrawBitmapString(ofToString(i) + " clusters", -4, 4);
-		ofTranslate(0, 20);
-	}
+	ofSetColor(255);
+	ofCircle(0, 0, 7);
+	ofDrawBitmapString(ofToString(clusters.size()) + " clusters", -4, 4);
 	ofPopMatrix();
-		
+	
 	ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
 	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, 2, true);
 	
@@ -76,14 +89,11 @@ void testApp::draw() {
 	
 	ofPushMatrix();
 	ofScale(scale, scale);
-	ofSetColor(ofColor::white);
+	ofSetColor(255);
 	sick.draw();
 	for(int i = 0; i < clusters.size(); i++) {
-		ofSetColor(ofColor::fromHsb(ofMap(i, 0, clusters.size(), 0, 255), 255, 255));
-		for(int j = 0; j < clusters[i].size(); j++) {
-			ofVec2f center = toOf(clusters[i][j]);
-			ofCircle(center, 100);
-		}
+		ofVec2f center = toOf(clusters[i]);
+		ofCircle(center, clusterRadius);
 	}
 	ofPopMatrix();
 }
