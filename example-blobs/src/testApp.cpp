@@ -7,7 +7,7 @@ using namespace ofxCv;
 // a closed hand extends about 100mm
 // a stretched hand can extend up to 200mm
 const float clusterRadius = 80; // 80mm radius is bigger than a closed hand, smaller than stretched
-const float ignoreAmount = .1; // ignore up to 10% of the points
+const float maxStddev = 60;
 const int maxClusterCount = 12;
 
 void testApp::setup() {
@@ -23,12 +23,15 @@ void testApp::update() {
 	sick.update();
 	if(sick.isFrameNew()) {
 		// build samples vector for all points within the bounds
-		unsigned short minDistance = 100, maxDistance = 1000;
+		unsigned short minDistance = 100, maxDistance = 2000;
+		float minAngle = -90, maxAngle = +90;
 		vector<cv::Point2f> samples;
 		const vector<unsigned short>& distance = sick.getDistanceFirst();
 		const vector<ofVec2f>& points = sick.getPointsFirst();
 		for(int i = 0; i < points.size(); i++) {
-			if(distance[i] < maxDistance && distance[i] > minDistance) {
+			float theta = ofMap(i, 0, points.size(), -135, +135);
+			if(distance[i] < maxDistance && distance[i] > minDistance &&
+				theta < maxAngle && theta > minAngle) {
 				samples.push_back(toCv(points[i]));
 			}
 		}
@@ -38,18 +41,19 @@ void testApp::update() {
 		for(int clusterCount = 1; clusterCount < maxClusterCount; clusterCount++) {			
 			if(samples.size() > clusterCount) {
 				Mat labelsMat, clustersMat;
-				double compactness = cv::kmeans(samplesMat, clusterCount, labelsMat, TermCriteria(), 8, KMEANS_PP_CENTERS, clustersMat);
+				double compactness = kmeans(samplesMat, clusterCount, labelsMat, TermCriteria(), 8, KMEANS_PP_CENTERS, clustersMat);
 				clusters = clustersMat.reshape(2);
 				vector<int> labels = labelsMat;
-				int outside = 0;
+				
+				vector<cv::Point2f> centered(samples.size());
 				for(int i = 0; i < samples.size(); i++) {
-					ofVec2f curCluster = toOf(clusters[labels[i]]);
-					ofVec2f curSample = toOf(samples[i]);
-					if(curSample.distance(curCluster) > clusterRadius) {
-						outside++;
-					}
-				}				
-				if(outside < samples.size() * ignoreAmount) {
+					centered[i] = clusters[labels[i]];
+				}
+				Mat centeredMat(centered);
+				centeredMat -= Mat(samples);
+				Scalar mean, stddev;
+				meanStdDev(centeredMat, mean, stddev);
+				if(ofVec2f(stddev[0], stddev[1]).length() < maxStddev) {
 					break;
 				}
 			}
