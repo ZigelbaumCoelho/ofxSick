@@ -15,22 +15,27 @@ void testApp::update() {
 	}
 }
 
-void testApp::draw() {
-	ofBackground(0);
-	ofSetColor(255);
-	
-	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, 2, true);
-	
+ofMesh getMesh(const vector<ofVec2f>& points) {
 	ofMesh mesh;
 	mesh.setMode(OF_PRIMITIVE_POINTS);
-	const vector<ofVec2f>& points = sick.getPoints();
 	for(int i = 0; i < points.size(); i++) {
 		mesh.addVertex(points[i]);
 	}
+	return mesh;
+}
+
+void testApp::draw() {
+	ofBackground(0);
+	
+	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, 2, true);
+	
 	ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
 	ofPushMatrix();
 	ofScale(scale, scale);
-	mesh.draw();
+	ofSetColor(255);
+	getMesh(sick.getPointsFirst()).draw();
+	ofSetColor(ofColor::red);
+	getMesh(sick.getPointsSecond()).draw();
 	ofPopMatrix();
 	
 	int count = 10;

@@ -1,5 +1,19 @@
 #include "ofxSick.h"
 
+string getStatusString(int status) {
+	switch(status) {
+		case 0: return "undefined";
+		case 1: return "initialisation";
+		case 2: return "configuration";
+		case 3: return "idle";
+		case 4: return "rotated";
+		case 5: return "in preparation";
+		case 6: return "ready";
+		case 7: return "ready for measurement";
+		default: return "unknown";
+	}
+}
+
 ofxSick::ofxSick() {
 }
 
@@ -33,8 +47,20 @@ const vector<unsigned short>& ofxSick::getBrightnessSecond() const {
 	return scanFront.second.brightness;
 }
 
-const vector<ofVec2f>& ofxSick::getPoints() const {
-	return points;
+const vector<ofVec2f>& ofxSick::getPointsFirst() const {
+	return pointsFirst;
+}
+
+const vector<ofColor>& ofxSick::getColorsFirst() const {
+	return colorsFirst;
+}
+
+const vector<ofVec2f>& ofxSick::getPointsSecond() const {
+	return pointsSecond;
+}
+
+const vector<ofColor>& ofxSick::getColorsSecond() const {
+	return colorsSecond;
 }
 
 void ofxSick::update() {
@@ -50,14 +76,27 @@ void ofxSick::update() {
 	}
 }
 
-void ofxSick::analyze() {
-	vector<unsigned short>& distances = scanFront.first.distance;
-	points.clear();
-	for(int i = 0; i < distances.size(); i++) {
+void ofxSick::polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& cartesian) const {
+	cartesian.resize(polar.size());
+	for(int i = 0; i < cartesian.size(); i++) {
 		float theta = i * .5; // .5 is the angular resolution
 		theta += 225;
-		points.push_back(ofVec2f(distances[i], 0).rotate(theta));
+		cartesian[i] = ofVec2f(polar[i], 0).rotate(theta);
 	}
+}
+
+void ofxSick::brightnessToColor(vector<unsigned short>& brightness, vector<ofColor>& color) const {
+	color.resize(brightness.size());
+	for(int i = 0; i < brightness.size(); i++) {
+		color[i].set(brightness[i]); // normally 8-bit, but can be 16-bit
+	}
+}
+
+void ofxSick::analyze() {
+	polarToCartesian(scanFront.first.distance, pointsFirst);
+	brightnessToColor(scanFront.first.brightness, colorsFirst);
+	polarToCartesian(scanFront.second.distance, pointsSecond);
+	brightnessToColor(scanFront.second.brightness, colorsSecond);
 }
 
 void ofxSickGrabber::connect() {
@@ -97,9 +136,9 @@ void ofxSickGrabber::connect() {
 	targetDataCfg.encoder = 0;
 	targetDataCfg.outputChannel = 3;
 	targetDataCfg.remission = true;
-	targetDataCfg.resolution = 0;
+	targetDataCfg.resolution = 0; // 8-bit remission values
 	targetDataCfg.position = false;
-	targetDataCfg.outputInterval = 1;
+	targetDataCfg.outputInterval = 1; // don't skip any frames
 	
 	ofLogVerbose("ofxSick") << "Setting scan data configuration.";
 	laser.setScanDataCfg(targetDataCfg);
@@ -112,7 +151,7 @@ void ofxSickGrabber::connect() {
 	while (ret != 7) {
 		ret = laser.queryStatus();
 		if(ret != prevRet) {
-			ofLogVerbose("ofxSick") << "Status: " << ret;
+			ofLogVerbose("ofxSick") << "Status: " << getStatusString(ret);
 		}
 		prevRet = ret;
 		ofSleepMillis(500);

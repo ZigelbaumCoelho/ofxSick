@@ -27,15 +27,21 @@ public:
 	const vector<unsigned short>& getDistanceSecond() const;
 	const vector<unsigned short>& getBrightnessSecond() const;
 	
-	const vector<ofVec2f>& getPoints() const;
+	const vector<ofVec2f>& getPointsFirst() const;
+	const vector<ofColor>& getColorsFirst() const;
+	const vector<ofVec2f>& getPointsSecond() const;
+	const vector<ofColor>& getColorsSecond() const;
 	
 protected:
 	bool newFrame;
 	
 	void analyze();
+	void polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& cartesian) const;
+	void brightnessToColor(vector<unsigned short>& brightness, vector<ofColor>& color) const;
 	
 	ScanData scanBack, scanFront;
-	vector<ofVec2f> points;
+	vector<ofVec2f> pointsFirst, pointsSecond;
+	vector<ofColor> colorsFirst, colorsSecond;
 };
 
 class ofxSickGrabber : public ofxSick {
