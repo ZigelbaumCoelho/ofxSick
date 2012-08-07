@@ -18,19 +18,45 @@ bool ofxSick::isFrameNew() {
 }
 
 const vector<unsigned short>& ofxSick::getDistanceFirst() const {
-	return distanceFirst;
+	return scanFront.first.distance;
 }
 
 const vector<unsigned short>& ofxSick::getBrightnessFirst() const {
-	return brightnessFirst;
+	return scanFront.first.brightness;
 }
 
 const vector<unsigned short>& ofxSick::getDistanceSecond() const {
-	return distanceSecond;
+	return scanFront.second.distance;
 }
 
 const vector<unsigned short>& ofxSick::getBrightnessSecond() const {
-	return brightnessSecond;
+	return scanFront.second.brightness;
+}
+
+const vector<ofVec2f>& ofxSick::getPoints() const {
+	return points;
+}
+
+void ofxSick::update() {
+	bool needToAnalyze = false;
+	lock();
+	if(newFrame) {
+		scanFront = scanBack;
+		needToAnalyze = true;
+	}
+	unlock();
+	if(needToAnalyze) {
+		analyze();
+	}
+}
+
+void ofxSick::analyze() {
+	vector<unsigned short>& distances = scanFront.first.distance;
+	points.clear();
+	for(int i = 0; i < distances.size(); i++) {
+		float theta = i * .5; // .5 is the angular resolution
+		points.push_back(ofVec2f(distances[i], 0).rotate(theta));
+	}
 }
 
 void ofxSickGrabber::connect() {
@@ -93,11 +119,13 @@ void ofxSickGrabber::threadedFunction() {
 	while(isThreadRunning()) {
 		scanData data;
 		laser.getData(data);
-		distanceFirst.assign(data.dist1, data.dist1 + data.dist_len1);
-		brightnessFirst.assign(data.rssi1, data.rssi1 + data.rssi_len1);
-		distanceSecond.assign(data.dist2, data.dist2 + data.dist_len2);
-		brightnessSecond.assign(data.rssi2, data.rssi2 + data.rssi_len2);
+		lock();
+		scanBack.first.distance.assign(data.dist1, data.dist1 + data.dist_len1);
+		scanBack.first.brightness.assign(data.rssi1, data.rssi1 + data.rssi_len1);
+		scanBack.second.distance.assign(data.dist2, data.dist2 + data.dist_len2);
+		scanBack.second.brightness.assign(data.rssi2, data.rssi2 + data.rssi_len2);
 		newFrame = true;
+		unlock();
 	}
 }
 

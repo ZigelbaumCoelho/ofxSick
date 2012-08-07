@@ -15,13 +15,23 @@ void testApp::setup() {
 }
 
 void testApp::update() {
+	sick.update();
 	if(sick.isFrameNew()) {
-		
 	}
 }
 
 void testApp::draw() {
-	ofBackground(255);
+	ofBackground(0);
+	ofSetColor(255);
+	
+	ofMesh mesh;
+	mesh.setMode(OF_PRIMITIVE_POINTS);
+	const vector<ofVec2f>& points = sick.getPoints();
+	for(int i = 0; i < points.size(); i++) {
+		mesh.addVertex(points[i]);
+	}
+	ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+	mesh.draw();
 }
 
 void testApp::keyPressed(int key){
