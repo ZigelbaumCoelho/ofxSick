@@ -1,5 +1,8 @@
 #include "testApp.h"
 
+using namespace cv;
+using namespace ofxCv;
+
 void testApp::setup() {
 	ofSetVerticalSync(true);
 	ofSetFrameRate(120);

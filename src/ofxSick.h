@@ -21,6 +21,7 @@ public:
 	void setup();
 	void update();
 	bool isFrameNew();
+	void draw() const;
 	
 	const vector<unsigned short>& getDistanceFirst() const;
 	const vector<unsigned short>& getBrightnessFirst() const;

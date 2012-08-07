@@ -31,6 +31,23 @@ bool ofxSick::isFrameNew() {
 	return curNewFrame;
 }
 
+ofMesh pointCloud(const vector<ofVec2f>& points) {
+	ofMesh mesh;
+	mesh.setMode(OF_PRIMITIVE_POINTS);
+	for(int i = 0; i < points.size(); i++) {
+		mesh.addVertex(points[i]);
+	}
+	return mesh;
+}
+
+void ofxSick::draw() const {
+	ofPushStyle();
+	pointCloud(pointsFirst).draw();
+	ofSetColor(ofColor::red);
+	pointCloud(pointsSecond).draw();
+	ofPopStyle();
+}
+
 const vector<unsigned short>& ofxSick::getDistanceFirst() const {
 	return scanFront.first.distance;
 }
