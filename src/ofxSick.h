@@ -32,7 +32,4 @@ protected:
 	
 	void connect();
 	void threadedFunction();
-	
-	vector<unsigned short> distanceFirst, brightnessFirst;
-	vector<unsigned short> distanceSecond, brightnessSecond;
 };
