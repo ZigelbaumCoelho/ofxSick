@@ -9,8 +9,13 @@ public:
 	~ofxSick();
 
 	void setup();
-	void update();
-	
+	bool isFrameNew();
+
+protected:
 	LMS1xx laser;
 	scanData data;
+	
+	bool newFrame;
+	void connect();
+	void threadedFunction();
 };

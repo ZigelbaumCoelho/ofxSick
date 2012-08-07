@@ -12,13 +12,17 @@ ofxSick::~ofxSick() {
 }
 
 void ofxSick::setup() {	
+	startThread();
+}
+
+void ofxSick::connect() {
 	laser.connect("169.254.238.162");
 	if(!laser.isConnected()) {
-		cout << "connection failend" << endl;
+		cout << "Connection failed." << endl;
 		return;
 	}
 	
-	cout << "Loging in ..." << endl;
+	cout << "Logging in ..." << endl;
 	laser.login();
 	laser.stopMeas();
 	
@@ -51,8 +55,8 @@ void ofxSick::setup() {
 	ret = 0;
 	while (ret != 7) {
 		ret = laser.queryStatus();
-		cout << "status : " << ret << endl;
-		sleep(1);
+		cout << "Status: " << ret << endl;
+		ofSleepMillis(1000);
 	}
 	cout << "Laser ready" << endl;
 	
@@ -65,6 +69,28 @@ void ofxSick::setup() {
 	}
 }
 
-void ofxSick::update() {
-	laser.getData(data);
+bool ofxSick::isFrameNew() {
+	bool curNewFrame = newFrame;
+	newFrame = false;
+	return curNewFrame;
 }
+
+void ofxSick::threadedFunction() {
+	while(isThreadRunning()) {
+		laser.getData(data);
+		newFrame = true;
+	}
+}
+
+/*
+void ofxSick::save() {
+	ofFile file("out.txt", ofFile::WriteOnly);
+	for(int i = 0; i < allData.size(); i++) {
+		vector<string> all;
+		for(int j = 0; j < allData[i].dist_len1; j++) {
+			all.push_back(ofToString(allData[i].dist1[j]));
+		}
+		file << ofJoinString(all, "\t") << endl;
+	}
+}
+*/
