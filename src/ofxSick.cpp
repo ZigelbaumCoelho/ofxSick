@@ -4,32 +4,50 @@ ofxSick::ofxSick() {
 }
 
 ofxSick::~ofxSick() {
-	cout << "Stop continuous data transmission ..." << endl;
-	laser.scanContinous(0);
-	laser.stopMeas();
-	cout << "Disconnect from laser" << endl;
-	laser.disconnect();
+	stopThread();
 }
 
-void ofxSick::setup() {	
+void ofxSick::setup() {
 	startThread();
 }
 
-void ofxSick::connect() {
+bool ofxSick::isFrameNew() {
+	bool curNewFrame = newFrame;
+	newFrame = false;
+	return curNewFrame;
+}
+
+const vector<unsigned short>& ofxSick::getDistanceFirst() const {
+	return distanceFirst;
+}
+
+const vector<unsigned short>& ofxSick::getBrightnessFirst() const {
+	return brightnessFirst;
+}
+
+const vector<unsigned short>& ofxSick::getDistanceSecond() const {
+	return distanceSecond;
+}
+
+const vector<unsigned short>& ofxSick::getBrightnessSecond() const {
+	return brightnessSecond;
+}
+
+void ofxSickGrabber::connect() {
+	ofLogVerbose() << "Connecting to LMS.";
 	laser.connect("169.254.238.162");
 	if(!laser.isConnected()) {
-		cout << "Connection failed." << endl;
+		ofLogError() << "Connection to LMS failed.";
 		return;
 	}
 	
-	cout << "Logging in ..." << endl;
+	ofLogVerbose() << "Logging in to LMS.";
 	laser.login();
 	laser.stopMeas();
 	
-	cout << "Geting scan configuration ..." << ::endl;
+	ofLogVerbose() << "Geting LMS scan configuration.";
 	scanCfg c = laser.getScanCfg();
-	
-	cout << "Scanning Frequency : " << c.scaningFrequency/100.0 << "Hz AngleResolution : " << c.angleResolution/10000.0 << "deg " << endl;
+	ofLogVerbose() << "Scanning Frequency : " << c.scaningFrequency/100.0 << "Hz AngleResolution : " << c.angleResolution/10000.0 << "deg";
 	
 	c.angleResolution = 5000;
 	c.scaningFrequency = 5000;
@@ -48,36 +66,37 @@ void ofxSick::connect() {
 	laser.setScanDataCfg(cc);
 	
 	int ret = 0;
-	cout << "Start measurements ..." << endl;
+	ofLogVerbose() << "Start LMS measurments.";
 	laser.startMeas();
 	
-	cout << "Wait for ready status ..." << endl;
+	ofLogVerbose() << "Wait for LMS ready status.";
 	ret = 0;
 	while (ret != 7) {
 		ret = laser.queryStatus();
-		cout << "Status: " << ret << endl;
+		ofLogVerbose() << "LMS Status: " << ret;
 		ofSleepMillis(1000);
 	}
-	cout << "Laser ready" << endl;
-	
-	cout << "Start continuous data transmission ..." << endl;
+	ofLogVerbose() << "LMS is ready, starting continuous data transmission.";
 	laser.scanContinous(1);
-	
-	for(int i =0; i < 3; i++) {
-		cout << "Receive data sample ..." << endl;
-		laser.getData(data);
-	}
 }
 
-bool ofxSick::isFrameNew() {
-	bool curNewFrame = newFrame;
-	newFrame = false;
-	return curNewFrame;
+ofxSickGrabber::~ofxSickGrabber() {
+	ofLogVerbose() << "Stopping LMS continuous data transmission.";
+	laser.scanContinous(0);
+	laser.stopMeas();
+	ofLogVerbose() << "Disconnecting from LMS.";
+	laser.disconnect();
 }
 
-void ofxSick::threadedFunction() {
+void ofxSickGrabber::threadedFunction() {
+	connect();
 	while(isThreadRunning()) {
+		scanData data;
 		laser.getData(data);
+		distanceFirst.assign(data.dist1, data.dist1 + data.dist_len1);
+		brightnessFirst.assign(data.rssi1, data.rssi1 + data.rssi_len1);
+		distanceSecond.assign(data.dist2, data.dist2 + data.dist_len2);
+		brightnessSecond.assign(data.rssi2, data.rssi2 + data.rssi_len2);
 		newFrame = true;
 	}
 }

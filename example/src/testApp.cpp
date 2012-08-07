@@ -9,7 +9,7 @@
 void testApp::setup() {
 	ofSetVerticalSync(true);
 	ofSetFrameRate(120);
-	ofSetCircleResolution(6);
+	ofSetLogLevel(OF_LOG_VERBOSE);
 	
 	sick.setup();
 }

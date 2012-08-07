@@ -11,5 +11,5 @@ public:
 	
 	void keyPressed(int key);
 	
-	ofxSick sick;
+	ofxSickGrabber sick;
 };
