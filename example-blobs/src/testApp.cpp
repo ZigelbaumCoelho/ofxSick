@@ -16,6 +16,8 @@ void testApp::setup() {
 	ofSetCircleResolution(64);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	
+	showGains = false;
+	
 	sick.setup();
 }
 
@@ -37,25 +39,29 @@ void testApp::update() {
 		}
 		Mat samplesMat = Mat(samples).reshape(1);
 		
+		bool found = false;
 		clusters.clear();
+		stddev.clear();
 		for(int clusterCount = 1; clusterCount < maxClusterCount; clusterCount++) {			
 			if(samples.size() > clusterCount) {
-				Mat labelsMat, clustersMat;
-				double compactness = kmeans(samplesMat, clusterCount, labelsMat, TermCriteria(), 8, KMEANS_PP_CENTERS, clustersMat);
-				clusters = clustersMat.reshape(2);
-				vector<int> labels = labelsMat;
-				
+				Mat labelsMat, centersMat;
+				kmeans(samplesMat, clusterCount, labelsMat, TermCriteria(), 8, KMEANS_PP_CENTERS, centersMat);
+				vector<cv::Point2f> centers = centersMat.reshape(2);
+				vector<int> labels = labelsMat;				
 				vector<cv::Point2f> centered(samples.size());
 				for(int i = 0; i < samples.size(); i++) {
-					centered[i] = clusters[labels[i]];
+					centered[i] = centers[labels[i]];
 				}
 				Mat centeredMat(centered);
 				centeredMat -= Mat(samples);
-				Scalar mean, stddev;
-				meanStdDev(centeredMat, mean, stddev);
-				if(ofVec2f(stddev[0], stddev[1]).length() < maxStddev) {
-					break;
+				Scalar curMean, curStddev;
+				meanStdDev(centeredMat, curMean, curStddev);
+				float totalDev = ofVec2f(curStddev[0], curStddev[1]).length();
+				if(!found && totalDev < maxStddev) {
+					clusters = centers;
+					found = true;
 				}
+				stddev.push_back(totalDev);
 			}
 		}
 	}
@@ -70,6 +76,23 @@ void testApp::draw() {
 	ofCircle(0, 0, 7);
 	ofDrawBitmapString(ofToString(clusters.size()) + " clusters", -4, 4);
 	ofPopMatrix();
+	
+	if(showGains) {
+		ofPushMatrix();
+		ofMesh mesh;
+		mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+		float prev = 400;
+		for(int i = 0; i < stddev.size(); i++) {
+			float curGain = prev / stddev[i];
+			prev = stddev[i];
+			float x = ofMap(i, 0, stddev.size(), 0, ofGetWidth());
+			float y = ofMap(curGain, 0, 4, 0, ofGetHeight());
+			mesh.addVertex(ofVec2f(x, y));
+			ofDrawBitmapString(ofToString(curGain) + "/" + ofToString(stddev[i]), x, y);
+		}
+		mesh.draw();
+		ofPopMatrix();
+	}
 	
 	ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
 	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, 2, true);
@@ -105,5 +128,8 @@ void testApp::draw() {
 void testApp::keyPressed(int key){
 	if(key == 's') {
 		//sick.save();
+	}
+	if(key == 'g') {
+		showGains = !showGains;
 	}
 }

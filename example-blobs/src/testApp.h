@@ -14,4 +14,6 @@ public:
 	
 	ofxSickGrabber sick;
 	vector<cv::Point2f> clusters;
+	vector<float> stddev;
+	bool showGains;
 };
