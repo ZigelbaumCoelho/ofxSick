@@ -21,7 +21,10 @@ void testApp::setup() {
 	showGains = false;
 	recording = false;
 	
-	sick.setup();
+	grabber.setup();
+	player.load("out.lms");
+	
+	sick = &grabber;
 	
 	activeRegion.setArcResolution(64);
 	activeRegion.setFilled(false);
@@ -31,12 +34,12 @@ void testApp::setup() {
 }
 
 void testApp::update() {
-	sick.update();
-	if(sick.isFrameNew()) {
+	sick->update();
+	if(sick->isFrameNew()) {
 		// build samples vector for all points within the bounds
 		vector<cv::Point2f> samples;
-		const vector<unsigned short>& distance = sick.getDistanceFirst();
-		const vector<ofVec2f>& points = sick.getPointsFirst();
+		const vector<unsigned short>& distance = sick->getDistanceFirst();
+		const vector<ofVec2f>& points = sick->getPointsFirst();
 		for(int i = 0; i < points.size(); i++) {
 			float theta = ofMap(i, 0, points.size(), -135, +135);
 			if(distance[i] < maxDistance && distance[i] > minDistance &&
@@ -125,7 +128,7 @@ void testApp::draw() {
 	ofPushMatrix();
 	ofScale(scale, scale);
 	ofSetColor(255);
-	sick.draw();
+	sick->draw();
 	for(int i = 0; i < clusters.size(); i++) {
 		ofVec2f center = toOf(clusters[i]);
 		ofCircle(center, clusterRadius);
@@ -138,9 +141,16 @@ void testApp::keyPressed(int key){
 	if(key == 'r') {
 		recording = !recording;
 		if(recording) {
-			sick.startRecording();
+			grabber.startRecording();
 		} else {
-			sick.stopRecording("out.lms");
+			grabber.stopRecording("out.lms");
+		}
+	}
+	if(key == '\t') {
+		if(sick == &player) {
+			sick = &grabber;
+		} else {
+			sick = &player;
 		}
 	}
 	if(key == 'g') {

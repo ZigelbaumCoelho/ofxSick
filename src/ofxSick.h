@@ -61,3 +61,16 @@ protected:
 	void threadedFunction();
 	void analyze();
 };
+
+class ofxSickPlayer : public ofxSick {
+public:
+	ofxSickPlayer();
+	void load(string filename);
+	
+protected:
+	unsigned int position;
+	vector<ScanData> recordedData;
+	
+	void threadedFunction();
+};
+

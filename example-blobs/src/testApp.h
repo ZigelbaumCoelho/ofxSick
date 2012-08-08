@@ -12,7 +12,10 @@ public:
 	
 	void keyPressed(int key);
 	
-	ofxSickGrabber sick;
+	ofxSickGrabber grabber;
+	ofxSickPlayer player;
+	ofxSick* sick;
+	
 	vector<cv::Point2f> clusters;
 	vector<float> stddev;
 	bool showGains;

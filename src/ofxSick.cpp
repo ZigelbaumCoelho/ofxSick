@@ -11,6 +11,19 @@ template <class T> void writeRaw(ofFile& out, vector<T>& data) {
 	}
 }
 
+template <class T> void readRaw(ofFile& in, T& data) {
+	in.read((char*) &data, sizeof(data)); 
+}
+
+template <class T> void readRaw(ofFile& in, vector<T>& data) {
+	unsigned int n;
+	readRaw(in, n);
+	data.resize(n);
+	for(int i = 0; i < data.size(); i++) {
+		readRaw(in, data[i]);
+	}
+}
+
 string getStatusString(int status) {
 	switch(status) {
 		case 0: return "undefined";
@@ -128,14 +141,14 @@ void ofxSick::analyze() {
 }
 
 void ofxSickGrabber::connect() {
-	ofLogVerbose("ofxSick") << "Connecting.";
+	ofLogVerbose("ofxSickGrabber") << "Connecting.";
 	laser.connect("169.254.238.162");
 	if(!laser.isConnected()) {
-		ofLogError("ofxSick") << "Connection failed.";
+		ofLogError("ofxSickGrabber") << "Connection failed.";
 		return;
 	}
 	
-	ofLogVerbose("ofxSick") << "Logging in.";
+	ofLogVerbose("ofxSickGrabber") << "Logging in.";
 	laser.login();
 	
 	scanCfg targetCfg;
@@ -144,20 +157,20 @@ void ofxSickGrabber::connect() {
 	targetCfg.startAngle = 0; // defaults to -45 * 10000.
 	targetCfg.stopAngle = 0; // defaults to 225 * 10000.
 	
-	ofLogVerbose("ofxSick") << "Geting current scan configuration.";
+	ofLogVerbose("ofxSickGrabber") << "Geting current scan configuration.";
 	scanCfg curCfg = laser.getScanCfg();
 	
 	if(curCfg.angleResolution != targetCfg.angleResolution ||
 		curCfg.scaningFrequency != targetCfg.scaningFrequency) {
-		ofLogVerbose("ofxSick") << "Setting new scan configuration.";
+		ofLogVerbose("ofxSickGrabber") << "Setting new scan configuration.";
 		laser.setScanCfg(targetCfg);
-		ofLogVerbose("ofxSick") << "Updating current scan configuration.";
+		ofLogVerbose("ofxSickGrabber") << "Updating current scan configuration.";
 		curCfg = laser.getScanCfg();
 	} else {
-		ofLogVerbose("ofxSick") << "LMS is already configured.";
+		ofLogVerbose("ofxSickGrabber") << "LMS is already configured.";
 	}
 	
-	ofLogVerbose("ofxSick") << curCfg.scaningFrequency/100. << "Hz at " << curCfg.angleResolution/10000. << "deg, from " << curCfg.startAngle/10000. << "deg to " << curCfg.stopAngle/10000. << "deg";
+	ofLogVerbose("ofxSickGrabber") << curCfg.scaningFrequency/100. << "Hz at " << curCfg.angleResolution/10000. << "deg, from " << curCfg.startAngle/10000. << "deg to " << curCfg.stopAngle/10000. << "deg";
 	
 	scanDataCfg targetDataCfg;
 	targetDataCfg.deviceName = false;
@@ -168,31 +181,31 @@ void ofxSickGrabber::connect() {
 	targetDataCfg.position = false;
 	targetDataCfg.outputInterval = 1; // don't skip any frames
 	
-	ofLogVerbose("ofxSick") << "Setting scan data configuration.";
+	ofLogVerbose("ofxSickGrabber") << "Setting scan data configuration.";
 	laser.setScanDataCfg(targetDataCfg);
 	
-	ofLogVerbose("ofxSick") << "Start measurments.";
+	ofLogVerbose("ofxSickGrabber") << "Start measurments.";
 	laser.startMeas();
 	
-	ofLogVerbose("ofxSick") << "Wait for ready status.";
+	ofLogVerbose("ofxSickGrabber") << "Wait for ready status.";
 	int ret = 0, prevRet = 0;
 	while (ret != 7) {
 		ret = laser.queryStatus();
 		if(ret != prevRet) {
-			ofLogVerbose("ofxSick") << "Status: " << getStatusString(ret);
+			ofLogVerbose("ofxSickGrabber") << "Status: " << getStatusString(ret);
 		}
 		prevRet = ret;
 		ofSleepMillis(500);
 	}
-	ofLogVerbose("ofxSick") << "Ready, starting continuous data transmission.";
+	ofLogVerbose("ofxSickGrabber") << "Ready, starting continuous data transmission.";
 	laser.scanContinous(1);
 }
 
 void ofxSickGrabber::disconnect() {
-	ofLogVerbose("ofxSick") << "Stopping continuous data transmission.";
+	ofLogVerbose("ofxSickGrabber") << "Stopping continuous data transmission.";
 	laser.scanContinous(0);
 	laser.stopMeas();
-	ofLogVerbose("ofxSick") << "Disconnecting.";
+	ofLogVerbose("ofxSickGrabber") << "Disconnecting.";
 	laser.disconnect();
 }
 
@@ -213,13 +226,13 @@ void ofxSickGrabber::threadedFunction() {
 }
 
 void ofxSickGrabber::startRecording() {
-	ofLogVerbose("ofxSick") << "Started recording data.";
+	ofLogVerbose("ofxSickGrabber") << "Started recording data.";
 	recording = true;
 	recordedData.clear();
 }
 
 void ofxSickGrabber::stopRecording(string filename) {
-	ofLogVerbose("ofxSick") << "Stopped recording data, saving " << recordedData.size() << " frames to " << filename;
+	ofLogVerbose("ofxSickGrabber") << "Stopped recording data, saving " << recordedData.size() << " frames to " << filename;
 	recording = false;
 	ofFile out(filename, ofFile::WriteOnly, true);
 	for(int i = 0; i < recordedData.size(); i++) {
@@ -229,12 +242,47 @@ void ofxSickGrabber::stopRecording(string filename) {
 		writeRaw(out, cur.second.distance);
 		writeRaw(out, cur.second.brightness);
 	}
-	ofLogVerbose("ofxSick") << "Done saving data.";
+	ofLogVerbose("ofxSickGrabber") << "Done saving data.";
 }
 
 void ofxSickGrabber::analyze() {
 	ofxSick::analyze();
 	if(recording) {
 		recordedData.push_back(scanFront);
+	}
+}
+
+ofxSickPlayer::ofxSickPlayer() 
+	:position(0) {
+}
+
+void ofxSickPlayer::load(string filename) {
+	ofLogVerbose("ofxSickPlayer") << "Loading recorded data from " << filename;
+	ofFile in(filename, ofFile::ReadOnly);
+	if(!in.exists()) {
+		ofLogVerbose("ofxSickPlayer") << "Cannot load recorded data: " << filename << " does not exist.";
+	}
+	while(!in.eof()) {
+		ScanData cur;
+		readRaw(in, cur.first.distance);
+		readRaw(in, cur.first.brightness);
+		readRaw(in, cur.second.distance);
+		readRaw(in, cur.second.brightness);
+		recordedData.push_back(cur);
+	}
+	ofLogVerbose("ofxSickPlayer") << "Done loading " << recordedData.size() << " frames of recorded data.";
+	ofxSick::setup();
+}
+
+void ofxSickPlayer::threadedFunction() {
+	while(isThreadRunning()) {
+		lock();
+		if(recordedData.size() > 0) {
+			scanBack = recordedData[position];
+			position = (position + 1) % recordedData.size();
+			newFrame = true;
+		}
+		unlock();
+		ofSleepMillis(20); // ~50Hz
 	}
 }
