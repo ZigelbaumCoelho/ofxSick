@@ -1,5 +1,16 @@
 #include "ofxSick.h"
 
+template <class T> void writeRaw(ofFile& out, T data) {
+	out.write((char*) &data, sizeof(data)); 
+}
+
+template <class T> void writeRaw(ofFile& out, vector<T>& data) {
+	writeRaw(out, data.size());
+	for(int i = 0; i < data.size(); i++) {
+		writeRaw(out, data[i]);
+	}
+}
+
 string getStatusString(int status) {
 	switch(status) {
 		case 0: return "undefined";
@@ -201,15 +212,29 @@ void ofxSickGrabber::threadedFunction() {
 	disconnect();
 }
 
-/*
-void ofxSick::save() {
-	ofFile file("out.txt", ofFile::WriteOnly);
-	for(int i = 0; i < allData.size(); i++) {
-		vector<string> all;
-		for(int j = 0; j < allData[i].dist_len1; j++) {
-			all.push_back(ofToString(allData[i].dist1[j]));
-		}
-		file << ofJoinString(all, "\t") << endl;
+void ofxSickGrabber::startRecording() {
+	ofLogVerbose("ofxSick") << "Started recording data.";
+	recording = true;
+	recordedData.clear();
+}
+
+void ofxSickGrabber::stopRecording(string filename) {
+	ofLogVerbose("ofxSick") << "Stopped recording data, saving " << recordedData.size() << " frames to " << filename;
+	recording = false;
+	ofFile out(filename, ofFile::WriteOnly, true);
+	for(int i = 0; i < recordedData.size(); i++) {
+		ScanData& cur = recordedData[i];
+		writeRaw(out, cur.first.distance);
+		writeRaw(out, cur.first.brightness);
+		writeRaw(out, cur.second.distance);
+		writeRaw(out, cur.second.brightness);
+	}
+	ofLogVerbose("ofxSick") << "Done saving data.";
+}
+
+void ofxSickGrabber::analyze() {
+	ofxSick::analyze();
+	if(recording) {
+		recordedData.push_back(scanFront);
 	}
 }
-*/

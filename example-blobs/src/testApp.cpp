@@ -19,6 +19,7 @@ void testApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	
 	showGains = false;
+	recording = false;
 	
 	sick.setup();
 	
@@ -134,8 +135,13 @@ void testApp::draw() {
 }
 
 void testApp::keyPressed(int key){
-	if(key == 's') {
-		//sick.save();
+	if(key == 'r') {
+		recording = !recording;
+		if(recording) {
+			sick.startRecording();
+		} else {
+			sick.stopRecording("out.lms");
+		}
 	}
 	if(key == 'g') {
 		showGains = !showGains;

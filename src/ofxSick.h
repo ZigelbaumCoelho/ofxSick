@@ -36,7 +36,7 @@ public:
 protected:
 	bool newFrame;
 	
-	void analyze();
+	virtual void analyze();
 	void polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& cartesian) const;
 	void brightnessToColor(vector<unsigned short>& brightness, vector<ofColor>& color) const;
 	
@@ -47,11 +47,17 @@ protected:
 
 class ofxSickGrabber : public ofxSick {
 public:
+	void startRecording();
+	void stopRecording(string filename);
 	
 protected:
 	LMS1xx laser;
 	
+	bool recording;
+	vector<ScanData> recordedData;
+	
 	void connect();
 	void disconnect();
 	void threadedFunction();
+	void analyze();
 };

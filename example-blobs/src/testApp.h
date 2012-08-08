@@ -17,4 +17,5 @@ public:
 	vector<float> stddev;
 	bool showGains;
 	ofPath activeRegion;
+	bool recording;
 };
