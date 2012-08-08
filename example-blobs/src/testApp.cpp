@@ -9,6 +9,8 @@ using namespace ofxCv;
 const float clusterRadius = 80; // 80mm radius is bigger than a closed hand, smaller than stretched
 const float maxStddev = 60;
 const int maxClusterCount = 12;
+const unsigned short minDistance = 1200, maxDistance = 2400;
+const float minAngle = -26, maxAngle = +26;
 
 void testApp::setup() {
 	ofSetVerticalSync(true);
@@ -19,14 +21,18 @@ void testApp::setup() {
 	showGains = false;
 	
 	sick.setup();
+	
+	activeRegion.setArcResolution(64);
+	activeRegion.setFilled(false);
+	activeRegion.arc(ofVec2f(0, 0), minDistance, minDistance, minAngle, maxAngle, true);
+	activeRegion.arc(ofVec2f(0, 0), maxDistance, maxDistance, maxAngle, minAngle, false);
+	activeRegion.close();
 }
 
 void testApp::update() {
 	sick.update();
 	if(sick.isFrameNew()) {
 		// build samples vector for all points within the bounds
-		unsigned short minDistance = 100, maxDistance = 2000;
-		float minAngle = -90, maxAngle = +90;
 		vector<cv::Point2f> samples;
 		const vector<unsigned short>& distance = sick.getDistanceFirst();
 		const vector<ofVec2f>& points = sick.getPointsFirst();
@@ -45,7 +51,7 @@ void testApp::update() {
 		for(int clusterCount = 1; clusterCount < maxClusterCount; clusterCount++) {			
 			if(samples.size() > clusterCount) {
 				Mat labelsMat, centersMat;
-				kmeans(samplesMat, clusterCount, labelsMat, TermCriteria(), 8, KMEANS_PP_CENTERS, centersMat);
+				float compactness = kmeans(samplesMat, clusterCount, labelsMat, TermCriteria(), 8, KMEANS_PP_CENTERS, centersMat);
 				vector<cv::Point2f> centers = centersMat.reshape(2);
 				vector<int> labels = labelsMat;				
 				vector<cv::Point2f> centered(samples.size());
@@ -61,6 +67,7 @@ void testApp::update() {
 					clusters = centers;
 					found = true;
 				}
+				// compactness is a better metric, but has to be analyzed for gains
 				stddev.push_back(totalDev);
 			}
 		}
@@ -86,7 +93,7 @@ void testApp::draw() {
 			float curGain = prev / stddev[i];
 			prev = stddev[i];
 			float x = ofMap(i, 0, stddev.size(), 0, ofGetWidth());
-			float y = ofMap(curGain, 0, 4, 0, ofGetHeight());
+			float y = ofMap(curGain, .5, 6, 0, ofGetHeight());
 			mesh.addVertex(ofVec2f(x, y));
 			ofDrawBitmapString(ofToString(curGain) + "/" + ofToString(stddev[i]), x, y);
 		}
@@ -122,6 +129,7 @@ void testApp::draw() {
 		ofVec2f center = toOf(clusters[i]);
 		ofCircle(center, clusterRadius);
 	}
+	activeRegion.draw(0, 0);
 	ofPopMatrix();
 }
 
