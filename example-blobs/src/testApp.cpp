@@ -22,7 +22,7 @@ void testApp::setup() {
 	recording = false;
 	
 	grabber.setup();
-	player.load("out.lms");
+	player.load("recording.lms");
 	
 	sick = &grabber;
 	
