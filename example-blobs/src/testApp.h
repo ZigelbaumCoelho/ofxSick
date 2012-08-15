@@ -21,4 +21,6 @@ public:
 	bool showGains;
 	ofPath activeRegion;
 	bool recording;
+	
+	ofxCv::PointTracker tracker;
 };

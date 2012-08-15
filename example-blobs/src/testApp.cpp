@@ -31,6 +31,9 @@ void testApp::setup() {
 	activeRegion.arc(ofVec2f(0, 0), minDistance, minDistance, minAngle, maxAngle, true);
 	activeRegion.arc(ofVec2f(0, 0), maxDistance, maxDistance, maxAngle, minAngle, false);
 	activeRegion.close();
+	
+	tracker.setMaximumDistance(100); // 200 mm
+	tracker.setPersistence(10); // 10 frames
 }
 
 void testApp::update() {
@@ -75,6 +78,8 @@ void testApp::update() {
 				stddev.push_back(totalDev);
 			}
 		}
+		
+		tracker.track(clusters);
 	}
 }
 
@@ -132,6 +137,7 @@ void testApp::draw() {
 	for(int i = 0; i < clusters.size(); i++) {
 		ofVec2f center = toOf(clusters[i]);
 		ofCircle(center, clusterRadius);
+		ofDrawBitmapString(ofToString(tracker.getLabelFromIndex(i)), center);
 	}
 	activeRegion.draw(0, 0);
 	ofPopMatrix();
