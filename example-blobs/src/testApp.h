@@ -23,4 +23,6 @@ public:
 	bool recording;
 	
 	ofxCv::PointTracker tracker;
+	typedef map<unsigned int, cv::Point2f> LabeledPoints;
+	LabeledPoints smooth;
 };
