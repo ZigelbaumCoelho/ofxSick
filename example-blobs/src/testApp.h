@@ -4,24 +4,24 @@
 #include "ofxSick.h"
 #include "ofxCv.h"
 
-template <class T>
-class Follower {
-protected:
-	bool dead;
-public:
-	Follower()
-	:dead(false) {
-	}
-	virtual void update(const T& track) = 0;
-	virtual void kill() {
-		dead = true;
-	}
-	bool getDead() const {
-		return dead;
-	}
-};
-
 namespace ofxCv {
+
+	template <class T>
+	class Follower {
+	protected:
+		bool dead;
+	public:
+		Follower()
+		:dead(false) {
+		}
+		virtual void update(const T& track) = 0;
+		virtual void kill() {
+			dead = true;
+		}
+		bool getDead() const {
+			return dead;
+		}
+	};
 	
 	/*
 	 a list of Follower objects is maintained
@@ -76,7 +76,7 @@ namespace ofxCv {
 	template <class F> class PointTrackerFollower : public TrackerFollower<cv::Point2f, F> {};
 }
 
-class MyFollower : public Follower<cv::Point2f> {
+class MyFollower : public ofxCv::Follower<cv::Point2f> {
 protected:
 	cv::Point2f position;
 public:
