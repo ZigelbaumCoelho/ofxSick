@@ -58,12 +58,14 @@ namespace ofxCv {
 			for(int i = 0; i < Tracker<T>::newLabels.size(); i++) {
 				labels.push_back(Tracker<T>::newLabels[i]);
 				followers.push_back(F());
+				killed.push_back(false);
 			}			
 			// remove dead
 			for(int i = labels.size() - 1; i >= 0; i--) {
 				if(followers[i].getDead()) {
 					followers.erase(followers.begin() + i);
 					labels.erase(labels.begin() + i);
+					killed.erase(killed.begin() + i);
 				}
 			}
 		}
