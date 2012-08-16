@@ -11,6 +11,47 @@ const float maxStddev = 60;
 const int maxClusterCount = 12;
 const unsigned short minDistance = 1200, maxDistance = 2400;
 const float minAngle = -26, maxAngle = +26;
+const float dyingTime = 1;
+
+void Cluster::setup(const cv::Point2f& track) {
+	position = track;
+	recent = track;
+}
+
+void Cluster::update(const cv::Point2f& track) {
+	position = toCv(toOf(position).interpolate(toOf(track), .1));
+	recent = track;
+	all.addVertex(toOf(position));
+}
+
+void Cluster::kill() {
+	cout << "killing from " << startedDying << endl;
+	float curTime = ofGetElapsedTimef();
+	if(startedDying == 0) {
+		cout << "setting to " << startedDying << endl;
+		startedDying = curTime;
+	} else if(curTime - startedDying > dyingTime) {
+		cout << curTime << " " << startedDying << endl;
+		dead = true;
+	}
+}
+
+void Cluster::draw() {
+	ofPushStyle();
+	float size = clusterRadius;
+	if(startedDying) {
+		ofSetColor(ofColor::red);
+		size = ofMap(ofGetElapsedTimef() - startedDying, 0, dyingTime, size, 0, true);
+	} else {
+		ofSetColor(ofColor::green);
+	}
+	ofCircle(toOf(recent), size);
+	ofLine(toOf(recent), toOf(position));
+	ofSetColor(255);
+	ofDrawBitmapString(ofToString(label), toOf(recent));
+	all.draw();
+	ofPopStyle();
+}
 
 void testApp::setup() {
 	ofSetVerticalSync(true);
@@ -134,7 +175,7 @@ void testApp::draw() {
 	ofScale(scale, scale);
 	ofSetColor(255);
 	sick->draw();
-	vector<MyFollower>& followers = tracker.getFollowers();
+	vector<Cluster>& followers = tracker.getFollowers();
 	for(int i = 0; i < followers.size(); i++) {
 		followers[i].draw();
 	}
