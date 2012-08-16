@@ -87,6 +87,10 @@ void testApp::update() {
 		// it calls PairedType::track(TrackedType& cur)
 		// or a class that does update(Tracker) so it can run off a contour finder?
 		
+		// or a class that has update(TrackedType, PairedType)
+		// default behavior of the PairedType is to be removed immediately after
+		// but this can be overridden to create a delay
+		
 		// remove old points
 		LabeledPoints::iterator itr = smooth.begin();
 		while(itr != smooth.end()) {
