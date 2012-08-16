@@ -25,13 +25,10 @@ void Cluster::update(const cv::Point2f& track) {
 }
 
 void Cluster::kill() {
-	cout << "killing from " << startedDying << endl;
 	float curTime = ofGetElapsedTimef();
 	if(startedDying == 0) {
-		cout << "setting to " << startedDying << endl;
 		startedDying = curTime;
 	} else if(curTime - startedDying > dyingTime) {
-		cout << curTime << " " << startedDying << endl;
 		dead = true;
 	}
 }
