@@ -80,38 +80,6 @@ void testApp::update() {
 		}
 		
 		tracker.track(clusters);
-		
-		// should try implementing this with a class:
-		// TrackerAuto<TrackedType, PairedType>
-		// where after every TrackerAuto::track(vector<TrackedType>& all)
-		// it calls PairedType::track(TrackedType& cur)
-		// or a class that does update(Tracker) so it can run off a contour finder?
-		
-		// or a class that has update(TrackedType, PairedType)
-		// default behavior of the PairedType is to be removed immediately after
-		// but this can be overridden to create a delay
-		
-		// remove old points
-		LabeledPoints::iterator itr = smooth.begin();
-		while(itr != smooth.end()) {
-			if(!tracker.existsCurrent(itr->first)) {
-				smooth.erase(itr++);
-			} else {
-				itr++;
-			}
-		}
-		// update current remaining points
-		for(itr = smooth.begin(); itr != smooth.end(); itr++) {
-			cv::Point2f& prev = itr->second;
-			const cv::Point2f& cur = tracker.getCurrent(itr->first);
-			prev = toCv(toOf(prev).interpolate(toOf(cur), .1));
-		}
-		// add new points
-		const vector<unsigned int>& newLabels = tracker.getNewLabels();
-		for(int i = 0; i < newLabels.size(); i++) {
-			unsigned int curLabel = newLabels[i];
-			smooth[curLabel] = tracker.getCurrent(curLabel);
-		}
 	}
 }
 
@@ -166,14 +134,9 @@ void testApp::draw() {
 	ofScale(scale, scale);
 	ofSetColor(255);
 	sick->draw();
-	for(int i = 0; i < clusters.size(); i++) {
-		ofVec2f center = toOf(clusters[i]);
-		ofCircle(center, clusterRadius);
-		
-		unsigned int label = tracker.getLabelFromIndex(i);
-		ofDrawBitmapString(ofToString(label), center);
-		ofVec2f smoothCenter = toOf(smooth[label]);
-		ofLine(center, smoothCenter);
+	vector<MyFollower>& followers = tracker.getFollowers();
+	for(int i = 0; i < followers.size(); i++) {
+		followers[i].draw();
 	}
 	activeRegion.draw(0, 0);
 	ofPopMatrix();
