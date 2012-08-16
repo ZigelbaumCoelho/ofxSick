@@ -103,11 +103,11 @@ void testApp::update() {
 		// update current remaining points
 		for(itr = smooth.begin(); itr != smooth.end(); itr++) {
 			cv::Point2f& prev = itr->second;
-			cv::Point2f& cur = tracker.getCurrent(itr->first);
+			const cv::Point2f& cur = tracker.getCurrent(itr->first);
 			prev = toCv(toOf(prev).interpolate(toOf(cur), .1));
 		}
 		// add new points
-		vector<unsigned int>& newLabels = tracker.getNewLabels();
+		const vector<unsigned int>& newLabels = tracker.getNewLabels();
 		for(int i = 0; i < newLabels.size(); i++) {
 			unsigned int curLabel = newLabels[i];
 			smooth[curLabel] = tracker.getCurrent(curLabel);
