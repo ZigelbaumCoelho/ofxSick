@@ -9,8 +9,6 @@ using namespace ofxCv;
 const float clusterRadius = 80; // 80mm radius is bigger than a closed hand, smaller than stretched
 const float maxStddev = 60;
 const int maxClusterCount = 12;
-const unsigned short minDistance = 1200, maxDistance = 2400;
-const float minAngle = -26, maxAngle = +26;
 const float dyingTime = 1;
 
 void testApp::setup() {
@@ -26,14 +24,11 @@ void testApp::setup() {
 	
 	sick = &player;
 	
-	activeRegion.setArcResolution(64);
-	activeRegion.setFilled(false);
-	activeRegion.arc(ofVec2f(0, 0), minDistance, minDistance, minAngle, maxAngle, true);
-	activeRegion.arc(ofVec2f(0, 0), maxDistance, maxDistance, maxAngle, minAngle, false);
-	activeRegion.close();
+	trackingRegion.set(1200, -800, 1200, 1600);
 	
-	tracker.setMaximumDistance(100); // 200 mm
-	tracker.setPersistence(10); // 10 frames
+	tracker.setMaximumDistance(100);
+	tracker.setPersistence(10);
+	tracker.setRegion(trackingRegion);
 }
 
 void testApp::update() {
@@ -81,7 +76,7 @@ void testApp::draw() {
 	for(int i = 0; i < followers.size(); i++) {
 		followers[i].draw();
 	}
-	activeRegion.draw(0, 0);
+	ofRect(trackingRegion);
 	ofPopMatrix();
 }
 

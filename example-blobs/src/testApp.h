@@ -19,6 +19,5 @@ public:
 	bool recording;
 	
 	ofxSickTracker<ofxSickFollower> tracker;
-	
-	ofPath activeRegion;
+	ofRectangle trackingRegion;
 };

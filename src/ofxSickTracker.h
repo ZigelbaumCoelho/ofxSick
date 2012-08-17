@@ -26,20 +26,19 @@ template <class F>
 class ofxSickTracker : public ofxCv::PointTrackerFollower<F> {
 protected:
 	vector<cv::Point2f> clusters;
-	static const float minAngle = -26, maxAngle = +26;
-	static const unsigned short minDistance = 1200, maxDistance = 2400;
+	ofRectangle region;
 	static const int maxClusterCount = 12;
 	static const float maxStddev = 60;
 public:
+	void setRegion(const ofRectangle& region) {
+		this->region = region;
+	}
 	void update(ofxSick& sick) {
 		// build samples vector for all points within the bounds
 		vector<cv::Point2f> samples;
-		const vector<unsigned short>& distance = sick.getDistanceFirst();
 		const vector<ofVec2f>& points = sick.getPointsFirst();
 		for(int i = 0; i < points.size(); i++) {
-			float theta = ofMap(i, 0, points.size(), -135, +135);
-			if(distance[i] < maxDistance && distance[i] > minDistance &&
-				 theta < maxAngle && theta > minAngle) {
+			if(region.inside(points[i])) {
 				samples.push_back(ofxCv::toCv(points[i]));
 			}
 		}
