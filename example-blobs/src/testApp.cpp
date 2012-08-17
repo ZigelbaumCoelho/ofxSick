@@ -13,56 +13,18 @@ const unsigned short minDistance = 1200, maxDistance = 2400;
 const float minAngle = -26, maxAngle = +26;
 const float dyingTime = 1;
 
-void Cluster::setup(const cv::Point2f& track) {
-	position = track;
-	recent = track;
-}
-
-void Cluster::update(const cv::Point2f& track) {
-	position = toCv(toOf(position).interpolate(toOf(track), .1));
-	recent = track;
-	all.addVertex(toOf(position));
-}
-
-void Cluster::kill() {
-	float curTime = ofGetElapsedTimef();
-	if(startedDying == 0) {
-		startedDying = curTime;
-	} else if(curTime - startedDying > dyingTime) {
-		dead = true;
-	}
-}
-
-void Cluster::draw() {
-	ofPushStyle();
-	float size = clusterRadius;
-	if(startedDying) {
-		ofSetColor(ofColor::red);
-		size = ofMap(ofGetElapsedTimef() - startedDying, 0, dyingTime, size, 0, true);
-	} else {
-		ofSetColor(ofColor::green);
-	}
-	ofCircle(toOf(recent), size);
-	ofLine(toOf(recent), toOf(position));
-	ofSetColor(255);
-	ofDrawBitmapString(ofToString(label), toOf(recent));
-	all.draw();
-	ofPopStyle();
-}
-
 void testApp::setup() {
 	ofSetVerticalSync(true);
 	ofSetFrameRate(120);
 	ofSetCircleResolution(64);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	
-	showGains = false;
 	recording = false;
 	
 	grabber.setup();
 	player.load("recording.lms");
 	
-	sick = &grabber;
+	sick = &player;
 	
 	activeRegion.setArcResolution(64);
 	activeRegion.setFilled(false);
@@ -77,47 +39,7 @@ void testApp::setup() {
 void testApp::update() {
 	sick->update();
 	if(sick->isFrameNew()) {
-		// build samples vector for all points within the bounds
-		vector<cv::Point2f> samples;
-		const vector<unsigned short>& distance = sick->getDistanceFirst();
-		const vector<ofVec2f>& points = sick->getPointsFirst();
-		for(int i = 0; i < points.size(); i++) {
-			float theta = ofMap(i, 0, points.size(), -135, +135);
-			if(distance[i] < maxDistance && distance[i] > minDistance &&
-				theta < maxAngle && theta > minAngle) {
-				samples.push_back(toCv(points[i]));
-			}
-		}
-		Mat samplesMat = Mat(samples).reshape(1);
-		
-		bool found = false;
-		clusters.clear();
-		stddev.clear();
-		for(int clusterCount = 1; clusterCount < maxClusterCount; clusterCount++) {			
-			if(samples.size() > clusterCount) {
-				Mat labelsMat, centersMat;
-				float compactness = kmeans(samplesMat, clusterCount, labelsMat, TermCriteria(), 8, KMEANS_PP_CENTERS, centersMat);
-				vector<cv::Point2f> centers = centersMat.reshape(2);
-				vector<int> labels = labelsMat;				
-				vector<cv::Point2f> centered(samples.size());
-				for(int i = 0; i < samples.size(); i++) {
-					centered[i] = centers[labels[i]];
-				}
-				Mat centeredMat(centered);
-				centeredMat -= Mat(samples);
-				Scalar curMean, curStddev;
-				meanStdDev(centeredMat, curMean, curStddev);
-				float totalDev = ofVec2f(curStddev[0], curStddev[1]).length();
-				if(!found && totalDev < maxStddev) {
-					clusters = centers;
-					found = true;
-				}
-				// compactness is a better metric, but has to be analyzed for gains
-				stddev.push_back(totalDev);
-			}
-		}
-		
-		tracker.track(clusters);
+		tracker.update(*sick);
 	}
 }
 
@@ -128,28 +50,11 @@ void testApp::draw() {
 	ofTranslate(20, 20);
 	ofSetColor(255);
 	ofCircle(0, 0, 7);
-	ofDrawBitmapString(ofToString(clusters.size()) + " clusters", -4, 4);
+	ofDrawBitmapString(ofToString(tracker.size()) + " clusters", -4, 4);
 	ofPopMatrix();
 	
-	if(showGains) {
-		ofPushMatrix();
-		ofMesh mesh;
-		mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
-		float prev = 400;
-		for(int i = 0; i < stddev.size(); i++) {
-			float curGain = prev / stddev[i];
-			prev = stddev[i];
-			float x = ofMap(i, 0, stddev.size(), 0, ofGetWidth());
-			float y = ofMap(curGain, .5, 6, 0, ofGetHeight());
-			mesh.addVertex(ofVec2f(x, y));
-			ofDrawBitmapString(ofToString(curGain) + "/" + ofToString(stddev[i]), x, y);
-		}
-		mesh.draw();
-		ofPopMatrix();
-	}
-	
 	ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, 2, true);
+	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, .2, true);
 	
 	int count = 10;
 	ofNoFill();
@@ -172,7 +77,7 @@ void testApp::draw() {
 	ofScale(scale, scale);
 	ofSetColor(255);
 	sick->draw();
-	vector<Cluster>& followers = tracker.getFollowers();
+	vector<ofxSickFollower>& followers = tracker.getFollowers();
 	for(int i = 0; i < followers.size(); i++) {
 		followers[i].draw();
 	}
@@ -195,8 +100,5 @@ void testApp::keyPressed(int key){
 		} else {
 			sick = &player;
 		}
-	}
-	if(key == 'g') {
-		showGains = !showGains;
 	}
 }
