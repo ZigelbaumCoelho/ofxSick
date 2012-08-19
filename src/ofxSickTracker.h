@@ -18,10 +18,10 @@ public:
 	:startedDying(0)
 	,dyingTime(1) {
 	}
-	void setup(const cv::Point2f& track);
-	void update(const cv::Point2f& track);
-	void kill();
-	void draw(float clusterSize = 60);
+	virtual void setup(const cv::Point2f& track);
+	virtual void update(const cv::Point2f& track);
+	virtual void kill();
+	virtual void draw(float clusterSize = 60);
 };
 
 template <class F>
@@ -50,7 +50,7 @@ public:
 		ofNoFill();
 		vector<F>& followers = ofxCv::PointTrackerFollower<F>::followers;
 		for(int i = 0; i < followers.size(); i++) {
-			followers[i].draw();
+			((ofxSickFollower) followers[i]).draw();
 		}
 		ofSetColor(255);
 		ofRect(region);
