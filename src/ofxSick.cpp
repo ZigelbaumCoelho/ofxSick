@@ -64,12 +64,30 @@ ofMesh pointCloud(const vector<ofVec2f>& points) {
 	return mesh;
 }
 
-void ofxSick::draw() const {
+void ofxSick::draw(int gridDivisions, float gridSize) const {
+	ofPushMatrix();
 	ofPushStyle();
+	
+	ofNoFill();
+	ofSetColor(ofColor::blue);
+	ofLine(0, 0, gridSize, 0); // forward
+	ofSetColor(ofColor::magenta);
+	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(-135)); // left bound
+	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(+135)); // right bound
+	ofSetColor(64);
+	for(int i = 0; i < gridDivisions; i++) {
+		float radius = ofMap(i, 0, gridDivisions - 1, 0, gridSize);
+		ofCircle(0, 0, radius);
+		ofVec2f textPosition = ofVec2f(radius, 0).rotate(45);
+		ofDrawBitmapStringHighlight(ofToString(radius, 2) + "mm", textPosition);
+	}
+	
+	ofSetColor(255);
 	pointCloud(pointsFirst).draw();
 	ofSetColor(ofColor::red);
 	pointCloud(pointsSecond).draw();
 	ofPopStyle();
+	ofPopMatrix();
 }
 
 const vector<unsigned short>& ofxSick::getDistanceFirst() const {

@@ -33,6 +33,17 @@ public:
 	void setRegion(const ofRectangle& region) {
 		this->region = region;
 	}
+	void draw() {
+		ofPushStyle();
+		ofNoFill();
+		vector<F>& followers = ofxCv::PointTrackerFollower<F>::followers;
+		for(int i = 0; i < followers.size(); i++) {
+			followers[i].draw();
+		}
+		ofSetColor(255);
+		ofRect(region);
+		ofPopStyle();
+	}
 	void update(ofxSick& sick) {
 		// build samples vector for all points within the bounds
 		vector<cv::Point2f> samples;

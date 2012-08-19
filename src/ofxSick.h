@@ -21,7 +21,7 @@ public:
 	void setup();
 	void update();
 	bool isFrameNew();
-	void draw() const;
+	void draw(int gridDivisions = 10, float gridSize = 2000) const;
 	
 	const vector<unsigned short>& getDistanceFirst() const;
 	const vector<unsigned short>& getBrightnessFirst() const;

@@ -3,14 +3,6 @@
 using namespace cv;
 using namespace ofxCv;
 
-// wrists are approximately 60-80mm in diameter
-// a closed hand extends about 100mm
-// a stretched hand can extend up to 200mm
-const float clusterRadius = 80; // 80mm radius is bigger than a closed hand, smaller than stretched
-const float maxStddev = 60;
-const int maxClusterCount = 12;
-const float dyingTime = 1;
-
 void testApp::setup() {
 	ofSetVerticalSync(true);
 	ofSetFrameRate(120);
@@ -41,6 +33,8 @@ void testApp::update() {
 void testApp::draw() {
 	ofBackground(0);
 	
+	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, .2, true);
+	
 	ofPushMatrix();
 	ofTranslate(20, 20);
 	ofSetColor(255);
@@ -49,34 +43,11 @@ void testApp::draw() {
 	ofPopMatrix();
 	
 	ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-	float scale = ofMap(mouseX, 0, ofGetWidth(), 0.05, .2, true);
-	
-	int count = 10;
-	ofNoFill();
-	float maxRange = MAX(ofGetWidth(), ofGetHeight()) / 2;
-	ofSetColor(ofColor::blue);
-	ofLine(0, 0, maxRange, 0); // forward
-	ofSetColor(ofColor::magenta);
-	ofLine(ofVec2f(0, 0), ofVec2f(maxRange, 0).rotate(-135)); // left bound
-	ofLine(ofVec2f(0, 0), ofVec2f(maxRange, 0).rotate(+135)); // right bound
-	ofSetColor(64);
-	for(int i = 0; i < count; i++) {
-		float radius = ofMap(i, 0, count - 1, 0, maxRange);
-		float distance = radius / scale;
-		ofCircle(0, 0, radius);
-		ofVec2f textPosition = ofVec2f(radius, 0).rotate(45);
-		ofDrawBitmapStringHighlight(ofToString(distance, 2) + "mm", textPosition);
-	}
 	
 	ofPushMatrix();
 	ofScale(scale, scale);
-	ofSetColor(255);
-	sick->draw();
-	vector<ofxSickFollower>& followers = tracker.getFollowers();
-	for(int i = 0; i < followers.size(); i++) {
-		followers[i].draw();
-	}
-	ofRect(trackingRegion);
+	sick->draw(12, 2400);
+	tracker.draw();
 	ofPopMatrix();
 }
 
