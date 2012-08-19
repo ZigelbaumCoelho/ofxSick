@@ -23,11 +23,19 @@ void ofxSickFollower::kill() {
 	}
 }
 
+float ofxSickFollower::getLiving() const {
+	if(startedDying) {
+		return 1 - (ofGetElapsedTimef() - startedDying) / dyingTime;
+	} else {
+		return 1;
+	}
+}
+
 void ofxSickFollower::draw(float clusterSize) {
 	ofPushStyle();
 	if(startedDying) {
 		ofSetColor(ofColor::red);
-		clusterSize = ofMap(ofGetElapsedTimef() - startedDying, 0, dyingTime, clusterSize, 0, true);
+		clusterSize = getLiving() * clusterSize;
 	} else {
 		ofSetColor(ofColor::green);
 	}

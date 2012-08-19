@@ -21,6 +21,7 @@ public:
 	virtual void setup(const cv::Point2f& track);
 	virtual void update(const cv::Point2f& track);
 	virtual void kill();
+	virtual float getLiving() const;
 	virtual void draw(float clusterSize = 60);
 };
 
