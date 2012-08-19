@@ -159,6 +159,10 @@ void ofxSick::analyze() {
 	brightnessToColor(scanFront.second.brightness, colorsSecond);
 }
 
+ofxSickGrabber::ofxSickGrabber()
+:recording(false) {
+}
+
 void ofxSickGrabber::connect() {
 	ofLogVerbose("ofxSickGrabber") << "Connecting.";
 	laser.connect("169.254.238.162");
@@ -251,17 +255,21 @@ void ofxSickGrabber::startRecording() {
 }
 
 void ofxSickGrabber::stopRecording(string filename) {
-	ofLogVerbose("ofxSickGrabber") << "Stopped recording data, saving " << recordedData.size() << " frames to " << filename;
-	recording = false;
-	ofFile out(filename, ofFile::WriteOnly, true);
-	for(int i = 0; i < recordedData.size(); i++) {
-		ScanData& cur = recordedData[i];
-		writeRaw(out, cur.first.distance);
-		writeRaw(out, cur.first.brightness);
-		writeRaw(out, cur.second.distance);
-		writeRaw(out, cur.second.brightness);
+	if(recording) {
+		ofLogVerbose("ofxSickGrabber") << "Stopped recording data, saving " << recordedData.size() << " frames to " << filename;
+		recording = false;
+		ofFile out(filename, ofFile::WriteOnly, true);
+		for(int i = 0; i < recordedData.size(); i++) {
+			ScanData& cur = recordedData[i];
+			writeRaw(out, cur.first.distance);
+			writeRaw(out, cur.first.brightness);
+			writeRaw(out, cur.second.distance);
+			writeRaw(out, cur.second.brightness);
+		}
+		ofLogVerbose("ofxSickGrabber") << "Done saving data.";
+	} else {
+		ofLogVerbose("ofxSickGrabber") << "Not recording data, not saving.";
 	}
-	ofLogVerbose("ofxSickGrabber") << "Done saving data.";
 }
 
 void ofxSickGrabber::analyze() {

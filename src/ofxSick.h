@@ -47,6 +47,7 @@ protected:
 
 class ofxSickGrabber : public ofxSick {
 public:
+	ofxSickGrabber();
 	void startRecording();
 	void stopRecording(string filename);
 	
