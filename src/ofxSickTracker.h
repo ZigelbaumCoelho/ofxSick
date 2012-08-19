@@ -12,14 +12,16 @@ protected:
 	cv::Point2f position, recent;
 	float startedDying;
 	ofPolyline all;
+	float dyingTime;
 public:
 	ofxSickFollower()
-	:startedDying(0) {
+	:startedDying(0)
+	,dyingTime(1) {
 	}
 	void setup(const cv::Point2f& track);
 	void update(const cv::Point2f& track);
 	void kill();
-	void draw();
+	void draw(float clusterSize = 60);
 };
 
 template <class F>
@@ -27,9 +29,19 @@ class ofxSickTracker : public ofxCv::PointTrackerFollower<F> {
 protected:
 	vector<cv::Point2f> clusters;
 	ofRectangle region;
-	static const int maxClusterCount = 12;
-	static const float maxStddev = 60;
+	unsigned int maxClusterCount;
+	float maxStddev;
 public:
+	ofxSickTracker()
+		:maxClusterCount(12)
+		,maxStddev(60) { // 60 is good for hand/arm tracking
+	}
+	void setMaxClusterCount(unsigned int maxClusterCount) {
+		this->maxClusterCount = maxClusterCount;
+	}
+	void setMaxStddev(float maxStddev) {
+		this->maxStddev = maxStddev;
+	}
 	void setRegion(const ofRectangle& region) {
 		this->region = region;
 	}

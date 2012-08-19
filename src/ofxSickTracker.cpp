@@ -3,9 +3,6 @@
 using namespace cv;
 using namespace ofxCv;
 
-const float clusterRadius = 80;
-const float dyingTime = 1;
-
 void ofxSickFollower::setup(const cv::Point2f& track) {
 	position = track;
 	recent = track;
@@ -26,16 +23,15 @@ void ofxSickFollower::kill() {
 	}
 }
 
-void ofxSickFollower::draw() {
+void ofxSickFollower::draw(float clusterSize) {
 	ofPushStyle();
-	float size = clusterRadius;
 	if(startedDying) {
 		ofSetColor(ofColor::red);
-		size = ofMap(ofGetElapsedTimef() - startedDying, 0, dyingTime, size, 0, true);
+		clusterSize = ofMap(ofGetElapsedTimef() - startedDying, 0, dyingTime, clusterSize, 0, true);
 	} else {
 		ofSetColor(ofColor::green);
 	}
-	ofCircle(toOf(position), size);
+	ofCircle(toOf(position), clusterSize);
 	ofLine(toOf(recent), toOf(position));
 	ofSetColor(255);
 	ofDrawBitmapString(ofToString(label), toOf(recent));
