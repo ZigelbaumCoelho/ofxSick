@@ -76,7 +76,7 @@ void ofxSick::draw(int gridDivisions, float gridSize) const {
 	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(+135)); // right bound
 	ofSetColor(64);
 	for(int i = 0; i < gridDivisions; i++) {
-		float radius = ofMap(i, 0, gridDivisions - 1, 0, gridSize);
+		float radius = ofMap(i, -1, gridDivisions - 1, 0, gridSize);
 		ofCircle(0, 0, radius);
 		ofVec2f textPosition = ofVec2f(radius, 0).rotate(45);
 		ofDrawBitmapStringHighlight(ofToString(radius, 2) + "mm", textPosition);
