@@ -4,6 +4,8 @@
  need to cluster or track points, you can just remove the files.
  */
 
+#pragma once
+
 #include "ofxSick.h"
 #include "ofxCv.h"
 
