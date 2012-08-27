@@ -23,6 +23,9 @@ public:
 	bool isFrameNew();
 	void draw(int gridDivisions = 10, float gridSize = 2000) const;
 	
+	void setAngleOffset(float angleOffset);
+	float getAngleOffset() const;
+	
 	const vector<unsigned short>& getDistanceFirst() const;
 	const vector<unsigned short>& getBrightnessFirst() const;
 	const vector<unsigned short>& getDistanceSecond() const;
@@ -40,6 +43,7 @@ protected:
 	void polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& cartesian) const;
 	void brightnessToColor(vector<unsigned short>& brightness, vector<ofColor>& color) const;
 	
+	float angleOffset;
 	ScanData scanBack, scanFront;
 	vector<ofVec2f> pointsFirst, pointsSecond;
 	vector<ofColor> colorsFirst, colorsSecond;

@@ -38,7 +38,9 @@ string getStatusString(int status) {
 	}
 }
 
-ofxSick::ofxSick() {
+ofxSick::ofxSick()
+	:angleOffset(0)
+	,newFrame(false) {
 }
 
 ofxSick::~ofxSick() {
@@ -47,6 +49,14 @@ ofxSick::~ofxSick() {
 
 void ofxSick::setup() {
 	startThread();
+}
+
+void ofxSick::setAngleOffset(float angleOffset) {
+	this->angleOffset = angleOffset;
+}
+
+float ofxSick::getAngleOffset() const {
+	return angleOffset;
 }
 
 bool ofxSick::isFrameNew() {
@@ -68,6 +78,8 @@ void ofxSick::draw(int gridDivisions, float gridSize) const {
 	ofPushMatrix();
 	ofPushStyle();
 	
+	ofPushMatrix();
+	ofRotate(angleOffset);
 	ofNoFill();
 	ofSetColor(ofColor::blue);
 	ofLine(0, 0, gridSize, 0); // forward
@@ -82,6 +94,7 @@ void ofxSick::draw(int gridDivisions, float gridSize) const {
 		ofSetColor(255);
 		ofDrawBitmapString(ofToString(radius, 2) + "mm", textPosition);
 	}
+	ofPopMatrix();
 	
 	ofSetColor(255);
 	pointCloud(pointsFirst).draw();
@@ -140,7 +153,7 @@ void ofxSick::polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& c
 	cartesian.resize(polar.size());
 	for(int i = 0; i < cartesian.size(); i++) {
 		float theta = i * .5; // .5 is the angular resolution
-		theta += 225;
+		theta += 225 + angleOffset;
 		cartesian[i] = ofVec2f(polar[i], 0).rotate(theta);
 	}
 }
