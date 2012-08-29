@@ -40,7 +40,8 @@ string getStatusString(int status) {
 
 ofxSick::ofxSick()
 	:angleOffset(0)
-	,newFrame(false) {
+	,newFrame(false)
+	,invert(false) {
 }
 
 ofxSick::~ofxSick() {
@@ -49,6 +50,10 @@ ofxSick::~ofxSick() {
 
 void ofxSick::setup() {
 	startThread();
+}
+
+void ofxSick::setInvert(bool invert) {
+	this->invert = invert;
 }
 
 void ofxSick::setAngleOffset(float angleOffset) {
@@ -153,7 +158,12 @@ void ofxSick::polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& c
 	cartesian.resize(polar.size());
 	for(int i = 0; i < cartesian.size(); i++) {
 		float theta = i * .5; // .5 is the angular resolution
-		theta += 225 + angleOffset;
+		theta += angleOffset;
+		if(invert) {
+			theta = 135 - theta;
+		} else {
+			theta = 225 + theta;
+		}
 		cartesian[i] = ofVec2f(polar[i], 0).rotate(theta);
 	}
 }

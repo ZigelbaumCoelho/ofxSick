@@ -23,6 +23,7 @@ public:
 	bool isFrameNew();
 	void draw(int gridDivisions = 10, float gridSize = 2000) const;
 	
+	void setInvert(bool invert);
 	void setAngleOffset(float angleOffset);
 	float getAngleOffset() const;
 	
@@ -38,6 +39,7 @@ public:
 	
 protected:
 	bool newFrame;
+	bool invert;
 	
 	virtual void analyze();
 	void polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& cartesian) const;
