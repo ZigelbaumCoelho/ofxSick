@@ -33,20 +33,19 @@ public:
 	ofxSickTracker()
 	:maxClusterCount(12)
 	,minClusterSize(1)
+	,maxPointDistance(50)
 	,useKmeans(true)
 	,maxStddev(60) { // 60 is good for hand/arm tracking
 	}
-	void setMinClusterSize(int minClusterSize) {
-		this->minClusterSize = minClusterSize;
-	}
-	void setMaxClusterCount(unsigned int maxClusterCount) {
+	void setupKmeans(float maxStddev, unsigned int maxClusterCount) {
 		this->maxClusterCount = maxClusterCount;
-	}
-	void setMaxStddev(float maxStddev) {
 		this->maxStddev = maxStddev;
+		useKmeans = true;
 	}
-	void setUseKmeans(bool useKmeans) {
-		this->useKmeans = useKmeans;
+	void setupNaive(int minClusterSize, int maxPointDistance) {
+		this->maxPointDistance = maxPointDistance;
+		this->minClusterSize = minClusterSize;
+		useKmeans = false;
 	}
 	void setRegion(const ofRectangle& region) {
 		this->region = region;
@@ -85,12 +84,11 @@ protected:
 	unsigned int maxClusterCount;
 	float maxStddev;
 	bool useKmeans;
-	int minClusterSize;
+	int minClusterSize, maxPointDistance;
 	
 	void updateNaive(ofxSick& sick) {
 		const vector<ofVec2f>& points = sick.getPointsFirst();
 		if(points.size() > 0) {
-			float maxDistance = 50;
 			vector< vector<ofVec2f> > all;
 			for(int i = 0; i < points.size(); i++) {
 				const ofVec2f& cur = points[i];
@@ -100,22 +98,29 @@ protected:
 					} else {
 						ofVec2f& prev = all.back().back();
 						float distance = cur.distance(prev);
-						if(distance > maxDistance) {
+						if(distance > maxPointDistance) {
 							all.push_back(vector<ofVec2f>());
 						}
 					}
 					all.back().push_back(cur);
 				}
 			}
-			int minPointCount = 1;
 			clusters.clear();
 			for(int i = 0; i < all.size(); i++) {
-				if(all[i].size() > minPointCount) {
+				if(all[i].size() >= minClusterSize) {
 					vector<cv::Point2f> allCv = ofxCv::toCv(all[i]);
+					
 					cv::Mat curMat(allCv);
 					cv::Scalar curMean, curStddev;
 					cv::meanStdDev(curMat, curMean, curStddev);
 					clusters.push_back(cv::Point2f(curMean[0], curMean[1]));
+					
+					/*
+					cv::Point2f enclosingCenter;
+					float radius;
+					cv::minEnclosingCircle(allCv, enclosingCenter, radius);
+					clusters.push_back(enclosingCenter);
+					*/
 				}
 			}
 		}
