@@ -72,7 +72,7 @@ bool ofxSick::isFrameNew() {
 
 ofMesh pointCloud(const vector<ofVec2f>& points) {
 	ofMesh mesh;
-	mesh.setMode(OF_PRIMITIVE_POINTS);
+	mesh.setMode(OF_PRIMITIVE_LINE_STRIP);//(OF_PRIMITIVE_POINTS);
 	for(int i = 0; i < points.size(); i++) {
 		mesh.addVertex(points[i]);
 	}
@@ -84,7 +84,7 @@ void ofxSick::draw(int gridDivisions, float gridSize) const {
 	ofPushStyle();
 	
 	ofPushMatrix();
-	ofRotate(angleOffset);
+	ofRotate(invert ? -angleOffset : angleOffset);
 	ofNoFill();
 	ofSetColor(ofColor::blue);
 	ofLine(0, 0, gridSize, 0); // forward

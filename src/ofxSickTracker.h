@@ -29,21 +29,24 @@ public:
 
 template <class F>
 class ofxSickTracker : public ofxCv::PointTrackerFollower<F> {
-protected:
-	vector<cv::Point2f> clusters;
-	ofRectangle region;
-	unsigned int maxClusterCount;
-	float maxStddev;
 public:
 	ofxSickTracker()
-		:maxClusterCount(12)
-		,maxStddev(60) { // 60 is good for hand/arm tracking
+	:maxClusterCount(12)
+	,minClusterSize(1)
+	,useKmeans(true)
+	,maxStddev(60) { // 60 is good for hand/arm tracking
+	}
+	void setMinClusterSize(int minClusterSize) {
+		this->minClusterSize = minClusterSize;
 	}
 	void setMaxClusterCount(unsigned int maxClusterCount) {
 		this->maxClusterCount = maxClusterCount;
 	}
 	void setMaxStddev(float maxStddev) {
 		this->maxStddev = maxStddev;
+	}
+	void setUseKmeans(bool useKmeans) {
+		this->useKmeans = useKmeans;
 	}
 	void setRegion(const ofRectangle& region) {
 		this->region = region;
@@ -60,6 +63,65 @@ public:
 		ofPopStyle();
 	}
 	void update(ofxSick& sick) {
+		if(useKmeans) {
+			updateKmeans(sick);
+		} else {
+			updateNaive(sick);
+		}
+		ofxCv::PointTrackerFollower<F>::track(clusters);
+	}
+	unsigned int size() const {
+		return clusters.size();
+	}
+	cv::Point2f getCluster(unsigned int i) const {
+		return clusters.at(i);
+	}
+	const vector<cv::Point2f>& getClusters() const {
+		return clusters;
+	}
+protected:
+	vector<cv::Point2f> clusters;
+	ofRectangle region;
+	unsigned int maxClusterCount;
+	float maxStddev;
+	bool useKmeans;
+	int minClusterSize;
+	
+	void updateNaive(ofxSick& sick) {
+		const vector<ofVec2f>& points = sick.getPointsFirst();
+		if(points.size() > 0) {
+			float maxDistance = 50;
+			vector< vector<ofVec2f> > all;
+			for(int i = 0; i < points.size(); i++) {
+				const ofVec2f& cur = points[i];
+				if(region.inside(cur)) {
+					if(all.empty()) {
+						all.push_back(vector<ofVec2f>());
+					} else {
+						ofVec2f& prev = all.back().back();
+						float distance = cur.distance(prev);
+						if(distance > maxDistance) {
+							all.push_back(vector<ofVec2f>());
+						}
+					}
+					all.back().push_back(cur);
+				}
+			}
+			int minPointCount = 1;
+			clusters.clear();
+			for(int i = 0; i < all.size(); i++) {
+				if(all[i].size() > minPointCount) {
+					vector<cv::Point2f> allCv = ofxCv::toCv(all[i]);
+					cv::Mat curMat(allCv);
+					cv::Scalar curMean, curStddev;
+					cv::meanStdDev(curMat, curMean, curStddev);
+					clusters.push_back(cv::Point2f(curMean[0], curMean[1]));
+				}
+			}
+		}
+	}
+	
+	void updateKmeans(ofxSick& sick) {
 		// build samples vector for all points within the bounds
 		vector<cv::Point2f> samples;
 		const vector<ofVec2f>& points = sick.getPointsFirst();
@@ -78,8 +140,10 @@ public:
 				vector<cv::Point2f> centers = centersMat.reshape(2);
 				vector<int> labels = labelsMat;
 				vector<cv::Point2f> centered(samples.size());
+				vector<int> clusterCount(centers.size());
 				for(int i = 0; i < samples.size(); i++) {
 					centered[i] = centers[labels[i]];
+					clusterCount[labels[i]]++;
 				}
 				cv::Mat centeredMat(centered);
 				centeredMat -= cv::Mat(samples);
@@ -87,21 +151,15 @@ public:
 				cv::meanStdDev(centeredMat, curMean, curStddev);
 				float totalDev = ofVec2f(curStddev[0], curStddev[1]).length();
 				if(totalDev < maxStddev) {
+					for(int i = centers.size() - 1; i >= 0; i--) {
+						if(clusterCount[i] < minClusterSize) {
+							centers.erase(centers.begin() + i);
+						}
+					}
 					clusters = centers;
 					break;
 				}
 			}
 		}
-		
-		ofxCv::PointTrackerFollower<F>::track(clusters);
-	}
-	unsigned int size() const {
-		return clusters.size();
-	}
-	cv::Point2f getCluster(unsigned int i) const {
-		return clusters.at(i);
-	}
-	const vector<cv::Point2f>& getClusters() const {
-		return clusters;
 	}
 };
