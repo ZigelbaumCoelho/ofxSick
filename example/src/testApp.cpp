@@ -5,7 +5,6 @@ void testApp::setup() {
 	ofSetFrameRate(120);
 	ofSetCircleResolution(64);
 	ofSetLogLevel(OF_LOG_VERBOSE);
-	
 	sick.setup();
 }
 

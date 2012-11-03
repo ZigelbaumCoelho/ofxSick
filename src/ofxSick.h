@@ -54,11 +54,13 @@ protected:
 class ofxSickGrabber : public ofxSick {
 public:
 	ofxSickGrabber();
+	void setIp(string ip);
 	void startRecording();
 	void stopRecording(string filename);
 	
 protected:
 	LMS1xx laser;
+	string ip;
 	
 	bool recording;
 	vector<ScanData> recordedData;

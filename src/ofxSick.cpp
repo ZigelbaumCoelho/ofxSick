@@ -183,12 +183,17 @@ void ofxSick::analyze() {
 }
 
 ofxSickGrabber::ofxSickGrabber()
-:recording(false) {
+:recording(false)
+,ip("192.168.0.1") {
+}
+
+void ofxSickGrabber::setIp(string ip) {
+	this->ip = ip;
 }
 
 void ofxSickGrabber::connect() {
 	ofLogVerbose("ofxSickGrabber") << "Connecting.";
-	laser.connect("169.254.238.162");
+	laser.connect(ip);
 	if(!laser.isConnected()) {
 		ofLogError("ofxSickGrabber") << "Connection failed.";
 		return;
