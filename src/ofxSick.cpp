@@ -40,12 +40,16 @@ string getStatusString(int status) {
 
 ofxSick::ofxSick()
 	:angleOffset(0)
+	,scanningFrequency(50)
+	,startAngle(-45)
+	,stopAngle(225)
+	,angularResolution(.5)
 	,newFrame(false)
 	,invert(false) {
 }
 
 ofxSick::~ofxSick() {
-	stopThread();
+	waitForThread();
 }
 
 void ofxSick::setup() {
@@ -54,6 +58,19 @@ void ofxSick::setup() {
 
 void ofxSick::setInvert(bool invert) {
 	this->invert = invert;
+}
+
+void ofxSick::setScanningFrequency(float scanningFrequency) {
+	this->scanningFrequency = scanningFrequency;
+}
+
+void ofxSick::setAngularResolution(float angularResolution) {
+	this->angularResolution = angularResolution;
+}
+
+void ofxSick::setAngleRange(float startAngle, float stopAngle) {
+	this->startAngle = startAngle;
+	this->stopAngle = stopAngle;
 }
 
 void ofxSick::setAngleOffset(float angleOffset) {
@@ -89,8 +106,8 @@ void ofxSick::draw(int gridDivisions, float gridSize) const {
 	ofSetColor(ofColor::blue);
 	ofLine(0, 0, gridSize, 0); // forward
 	ofSetColor(ofColor::magenta);
-	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(-135)); // left bound
-	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(+135)); // right bound
+	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(startAngle)); // left bound
+	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(stopAngle)); // right bound
 	for(int i = 0; i < gridDivisions; i++) {
 		float radius = ofMap(i, -1, gridDivisions - 1, 0, gridSize);
 		ofSetColor(64);
@@ -157,13 +174,14 @@ void ofxSick::update() {
 void ofxSick::polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& cartesian) const {
 	cartesian.resize(polar.size());
 	for(int i = 0; i < cartesian.size(); i++) {
-		float theta = i * .5; // .5 is the angular resolution
+		float theta = i * angularResolution;
 		theta += angleOffset;
 		if(invert) {
-			theta = 135 - theta;
+			theta = (startAngle + stopAngle) / 2 - theta;
 		} else {
-			theta = 225 + theta;
+			theta = stopAngle + theta;
 		}
+		theta += 90;
 		cartesian[i] = ofVec2f(polar[i], 0).rotate(theta);
 	}
 }
@@ -202,32 +220,32 @@ void ofxSickGrabber::connect() {
 	ofLogVerbose("ofxSickGrabber") << "Logging in.";
 	laser.login();
 	
-	scanCfg targetCfg;
-	targetCfg.angleResolution = .5 * 1000;
-	targetCfg.scaningFrequency = 50 * 100;
-	targetCfg.startAngle = 0; // defaults to -45 * 10000.
-	targetCfg.stopAngle = 0; // defaults to 225 * 10000.
+	laser.stopMeas(); // unnecessary?
 	
-	ofLogVerbose("ofxSickGrabber") << "Geting current scan configuration.";
+	scanCfg targetCfg;
+	targetCfg.angleResolution = angularResolution * 1000;
+	targetCfg.scaningFrequency = scanningFrequency * 100;
+	targetCfg.startAngle = startAngle * 10000; // 0 defaults to -45 * 10000.
+	targetCfg.stopAngle = stopAngle * 10000; // 0 defaults to 225 * 10000.
+	
+	ofLogVerbose("ofxSickGrabber") << "Setting new scan configuration.";
+	laser.setScanCfg(targetCfg);
+	
+	ofLogVerbose("ofxSickGrabber") << "Updating current scan configuration.";
 	scanCfg curCfg = laser.getScanCfg();
 	
-	if(curCfg.angleResolution != targetCfg.angleResolution ||
-		curCfg.scaningFrequency != targetCfg.scaningFrequency) {
-		ofLogVerbose("ofxSickGrabber") << "Setting new scan configuration.";
-		laser.setScanCfg(targetCfg);
-		ofLogVerbose("ofxSickGrabber") << "Updating current scan configuration.";
-		curCfg = laser.getScanCfg();
-	} else {
-		ofLogVerbose("ofxSickGrabber") << "LMS is already configured.";
-	}
-	
-	ofLogVerbose("ofxSickGrabber") << curCfg.scaningFrequency/100. << "Hz at " << curCfg.angleResolution/10000. << "deg, from " << curCfg.startAngle/10000. << "deg to " << curCfg.stopAngle/10000. << "deg";
-	
+	scanningFrequency = curCfg.scaningFrequency / 100.;
+	angularResolution = curCfg.angleResolution / 10000.;
+	startAngle = curCfg.startAngle / 10000.;
+	stopAngle = curCfg.stopAngle / 10000.;	
+	ofLogVerbose("ofxSickGrabber") << scanningFrequency << "Hz at " << angularResolution << "deg, from " << startAngle << "deg to " << stopAngle << "deg";
+		
+	bool enableSecondReturn = false;
 	scanDataCfg targetDataCfg;
 	targetDataCfg.deviceName = false;
 	targetDataCfg.encoder = 0;
-	targetDataCfg.outputChannel = 3;
-	targetDataCfg.remission = true;
+	targetDataCfg.outputChannel = enableSecondReturn ? 3 : 1;
+	targetDataCfg.remission = false;
 	targetDataCfg.resolution = 0; // 8-bit remission values
 	targetDataCfg.position = false;
 	targetDataCfg.outputInterval = 1; // don't skip any frames
@@ -246,7 +264,7 @@ void ofxSickGrabber::connect() {
 			ofLogVerbose("ofxSickGrabber") << "Status: " << getStatusString(ret);
 		}
 		prevRet = ret;
-		ofSleepMillis(500);
+		ofSleepMillis(10);
 	}
 	ofLogVerbose("ofxSickGrabber") << "Ready, starting continuous data transmission.";
 	laser.scanContinous(1);
@@ -263,6 +281,7 @@ void ofxSickGrabber::disconnect() {
 void ofxSickGrabber::threadedFunction() {
 	connect();
 	while(isThreadRunning()) {
+		//unsigned long start = ofGetSystemTime();
 		scanData data;
 		laser.getData(data);
 		lock();
@@ -272,6 +291,8 @@ void ofxSickGrabber::threadedFunction() {
 		scanBack.second.brightness.assign(data.rssi2, data.rssi2 + data.rssi_len2);
 		newFrame = true;
 		unlock();
+		//unsigned long stop = ofGetSystemTime();
+		//cout << "total time: " << (stop - start) << endl;
 	}
 	disconnect();
 }

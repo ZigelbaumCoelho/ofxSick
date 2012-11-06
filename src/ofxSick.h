@@ -23,6 +23,9 @@ public:
 	bool isFrameNew();
 	void draw(int gridDivisions = 10, float gridSize = 2000) const;
 	
+	void setScanningFrequency(float scanningFrequency);
+	void setAngularResolution(float angularResolution);
+	void setAngleRange(float startAngle, float stopAngle);
 	void setInvert(bool invert);
 	void setAngleOffset(float angleOffset);
 	float getAngleOffset() const;
@@ -40,6 +43,8 @@ public:
 protected:
 	bool newFrame;
 	bool invert;
+	
+	float scanningFrequency, startAngle, stopAngle, angularResolution;
 	
 	virtual void analyze();
 	void polarToCartesian(vector<unsigned short>& polar, vector<ofVec2f>& cartesian) const;

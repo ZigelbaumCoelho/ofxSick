@@ -30,6 +30,8 @@
 #include <cstring>
 #include <unistd.h>
 
+#include "ofMain.h"
+
 #include "LMS1xx.h"
 
 LMS1xx::LMS1xx() :
@@ -204,24 +206,117 @@ void LMS1xx::scanContinous(int start) {
 	}
 }
 
-void LMS1xx::getData(scanData& data) {
-	char buf[20000];
-	fd_set rfds;
-	struct timeval tv;
-	int retval, len;
-	len = 0;
+vector<char> leftovers;
 
-	do {
+string repeat(string str, int n) {
+	string out = "";
+	for(int i = 0; i < n; i++) {
+		out += str;
+	}
+	return out;
+}
+
+// originally was 20000
+#define DATA_BUF_LEN 40000
+void LMS1xx::getData(scanData& data) {
+	char raw[DATA_BUF_LEN];
+	
+	// step 1: read everything available from the network
+	// step 2: read local buffer from STX 0x02 to ETX 0x03
+	// step 3: parse most oldest data in fixed size queue
+	
+	/*
+	vector<char> complete;
+	while(true) {
+		fd_set rfds;
 		FD_ZERO(&rfds);
 		FD_SET(sockDesc, &rfds);
-
+		
+		struct timeval tv;
 		tv.tv_sec = 0;
 		tv.tv_usec = 50000;
-		retval = select(sockDesc + 1, &rfds, NULL, NULL, &tv);
-		if (retval) {
-			len += read(sockDesc, buf + len, 20000 - len);
+		
+		int socketsAvailable = select(sockDesc + 1, &rfds, NULL, NULL, &tv);
+		if(socketsAvailable > 0) { // at least one socket available
+			int curLen = read(sockDesc, raw, DATA_BUF_LEN); // read available data
+			if(curLen > 0) { // some data was read
+				cout << "copied " << curLen << " bytes " << repeat("x", curLen/120) << endl;
+				complete.insert(complete.end(), raw, raw + curLen); // copy to complete
+			} else { // no data remains
+				cout << "no more data available" << endl;
+				break;
+			}
+		} else { // no more sockets available
+			cout << "no more sockets available" << endl;
+			break;
 		}
-	} while ((buf[0] != 0x02) || (buf[len - 1] != 0x03));
+	}
+	return;
+*/
+	char buf[DATA_BUF_LEN];
+	int len = 0;
+	
+	
+	if(leftovers.size() > 0) {
+		if(debug)
+			cout << "copying " << leftovers.size() << " leftovers, starting with 0x" << ofToHex(leftovers[0]) << endl;
+		for(int i = 0; i < leftovers.size(); i++) {
+			buf[len] = leftovers[i];
+			len++;
+		}
+		leftovers.clear();
+	}
+	
+	unsigned long start;
+	if(debug) {
+		start = ofGetSystemTime();
+		cout << "inside getData()" << endl;
+	}
+	while(true) {
+		if(debug)
+			cout << "inside do while. ";
+				
+		fd_set rfds;
+		FD_ZERO(&rfds);
+		FD_SET(sockDesc, &rfds);
+		
+		struct timeval tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 50000;
+		
+		int retval = select(sockDesc + 1, &rfds, NULL, NULL, &tv); // maybe only once?
+		if(debug)
+			cout << "retval: " << retval << " ";
+		int curLen = 0;
+		if (retval) {
+			curLen = read(sockDesc, raw, DATA_BUF_LEN); // read till this is zero
+			if(debug)
+					cout << "(" << curLen << " chars) ";
+		}
+		
+		bool done = false;
+		for(int i = 0; i < curLen; i++) {
+			if(raw[i] == 0x03) { // found an ETX
+				if(debug)
+					cout << "ETX at " << i << " ";
+				leftovers.assign(raw + i + 1, raw + curLen); // copy remaining to leftovers
+				done = true;
+				break;
+			} else { // copy a single char
+				buf[len] = raw[i];
+				len++;
+			}
+		}
+		if(debug)
+			cout << endl;
+		if(done) {
+			break;
+		}
+	}
+	if(debug) {
+		unsigned long stop = ofGetSystemTime();
+		cout << "receive time: " << (stop - start) << " with " << len << " bytes received and " << leftovers.size() << " leftover" << endl;
+	}
 
 	//	if (debug)
 	//		std::cout << "scan data recieved" << std::endl;
