@@ -49,7 +49,10 @@ ofxSick::ofxSick()
 }
 
 ofxSick::~ofxSick() {
-	waitForThread();
+	stopThread();
+	if(isThreadRunning()) {
+		waitForThread();
+	}
 }
 
 void ofxSick::setup() {
