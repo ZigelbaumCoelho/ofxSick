@@ -16,7 +16,6 @@ public:
 class ofxSick : public ofThread {
 public:
 	ofxSick();
-	~ofxSick();
 
 	void setup();
 	void update();
@@ -74,6 +73,7 @@ protected:
 	void disconnect();
 	void threadedFunction();
 	void analyze();
+	void confirmCfg(int curCfg, int targetCfg, const string& name);
 };
 
 class ofxSickPlayer : public ofxSick {

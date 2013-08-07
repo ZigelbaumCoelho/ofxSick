@@ -48,13 +48,6 @@ ofxSick::ofxSick()
 	,invert(false) {
 }
 
-ofxSick::~ofxSick() {
-	stopThread();
-	if(isThreadRunning()) {
-		waitForThread();
-	}
-}
-
 void ofxSick::setup() {
 	startThread();
 }
@@ -212,11 +205,17 @@ void ofxSickGrabber::setIp(string ip) {
 	this->ip = ip;
 }
 
+void ofxSickGrabber::confirmCfg(int curCfg, int targetCfg, const string& name) {
+	if(curCfg != targetCfg) {
+		ofLogError("ofxSickGrabber") << "Failed to set " << name << " @ " << ip; 
+	}
+}
+
 void ofxSickGrabber::connect() {
-	ofLogVerbose("ofxSickGrabber") << "Connecting.";
+	ofLogVerbose("ofxSickGrabber") << "Connecting @ " << ip;
 	laser.connect(ip);
 	if(!laser.isConnected()) {
-		ofLogError("ofxSickGrabber") << "Connection failed.";
+		ofLogError("ofxSickGrabber") << "Connection failed @ " << ip;
 		return;
 	}
 	
@@ -242,7 +241,12 @@ void ofxSickGrabber::connect() {
 	startAngle = curCfg.startAngle / 10000.;
 	stopAngle = curCfg.stopAngle / 10000.;	
 	ofLogVerbose("ofxSickGrabber") << scanningFrequency << "Hz at " << angularResolution << "deg, from " << startAngle << "deg to " << stopAngle << "deg";
-		
+	
+	confirmCfg(curCfg.angleResolution, targetCfg.angleResolution, "angular resolution");
+	confirmCfg(curCfg.scaningFrequency, targetCfg.scaningFrequency, "scanning frequency");
+	confirmCfg(curCfg.startAngle, targetCfg.startAngle, "start angle");
+	confirmCfg(curCfg.stopAngle, targetCfg.stopAngle, "stop angle");
+	
 	bool enableSecondReturn = false;
 	scanDataCfg targetDataCfg;
 	targetDataCfg.deviceName = false;

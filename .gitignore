@@ -7,6 +7,7 @@ example-pulse/
 *.app*
 *.DS_*
 *.xcworkspacedata
+xcuserdata/
 
 *.opensdf
 *.sdf
@@ -18,3 +19,5 @@ obj/
 bin/
 build/
 !data/
+
+ofxCv.wiki/
