@@ -41,9 +41,9 @@ string getStatusString(int status) {
 ofxSick::ofxSick()
 	:angleOffset(0)
 	,scanningFrequency(50)
-	,startAngle(-45)
-	,stopAngle(225)
-	,angularResolution(.5)
+	,startAngle(-5)
+	,stopAngle(70)
+	,angularResolution(5)
 	,newFrame(false)
 	,invert(false) {
 }
@@ -222,7 +222,7 @@ void ofxSickGrabber::connect() {
 	ofLogVerbose("ofxSickGrabber") << "Logging in.";
 	laser.login();
 	
-	laser.stopMeas(); // unnecessary?
+	//laser.stopMeas(); // unnecessary?
 	
 	scanCfg targetCfg;
 	targetCfg.angleResolution = angularResolution * 1000;
@@ -232,20 +232,24 @@ void ofxSickGrabber::connect() {
 	
 	ofLogVerbose("ofxSickGrabber") << "Setting new scan configuration.";
 	laser.setScanCfg(targetCfg);
+    laser.setScanRange(targetCfg);
 	
 	ofLogVerbose("ofxSickGrabber") << "Updating current scan configuration.";
-	scanCfg curCfg = laser.getScanCfg();
-	
-	scanningFrequency = curCfg.scaningFrequency / 100.;
-	angularResolution = curCfg.angleResolution / 10000.;
-	startAngle = curCfg.startAngle / 10000.;
-	stopAngle = curCfg.stopAngle / 10000.;	
+	scanCfg freqAndRes = laser.getScanCfg();
+	scanCfg range = laser.getScanRange();
+    
+    laser.saveConfig();
+    
+	scanningFrequency = freqAndRes.scaningFrequency / 100.;
+	angularResolution = freqAndRes.angleResolution / 10000.;
+	startAngle = range.startAngle / 10000.;
+	stopAngle = range.stopAngle / 10000.;
 	ofLogVerbose("ofxSickGrabber") << scanningFrequency << "Hz at " << angularResolution << "deg, from " << startAngle << "deg to " << stopAngle << "deg";
 	
-	confirmCfg(curCfg.angleResolution, targetCfg.angleResolution, "angular resolution");
-	confirmCfg(curCfg.scaningFrequency, targetCfg.scaningFrequency, "scanning frequency");
-	confirmCfg(curCfg.startAngle, targetCfg.startAngle, "start angle");
-	confirmCfg(curCfg.stopAngle, targetCfg.stopAngle, "stop angle");
+	confirmCfg(freqAndRes.angleResolution, targetCfg.angleResolution, "angular resolution");
+	confirmCfg(freqAndRes.scaningFrequency, targetCfg.scaningFrequency, "scanning frequency");
+	confirmCfg(range.startAngle, targetCfg.startAngle, "start angle");
+	confirmCfg(range.stopAngle, targetCfg.stopAngle, "stop angle");
 	
 	bool enableSecondReturn = false;
 	scanDataCfg targetDataCfg;
@@ -260,6 +264,8 @@ void ofxSickGrabber::connect() {
 	ofLogVerbose("ofxSickGrabber") << "Setting scan data configuration.";
 	laser.setScanDataCfg(targetDataCfg);
 	
+    laser.startDevice();
+    
 	ofLogVerbose("ofxSickGrabber") << "Start measurments.";
 	laser.startMeas();
 	
