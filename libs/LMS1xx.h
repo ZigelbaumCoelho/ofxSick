@@ -241,6 +241,7 @@ public:
 
 	/*!
 	* @brief Get current scan configuration.
+    * Important to note: this always returns the default, immutable angle range of the laser. 
 	* Get scan configuration :
 	* - scanning frequency.
 	* - scanning resolution.
@@ -252,14 +253,24 @@ public:
 
 	/*!
 	* @brief Set scan configuration.
-	* Get scan configuration :
-	* - scanning frequency.
-	* - scanning resolution.
-	* - start angle.
-	* - stop angle.
+    * Note that the laser's start and stop angles are immutable. Those cfg values are ignored by
+    * this function. If you wish to shrink your data set to a certain range, use setScanRange.
 	* @param cfg structure containing scan configuration.
 	*/
 	void setScanCfg(const scanCfg &cfg);
+    
+    /*!
+     * @brief Set output range.
+     * This does not stop the laser from physically scanning its full range. Instead it ensures the laser
+     * only sends back data relating to a certain subset of that range. Resolution/freq values ignored.
+     */
+	void setScanRange(const scanCfg &cfg);
+    
+    /*!
+     * @brief Get output range.
+     * Returns the laser's actual output range (as opposed to the actual, immutable angle range it scans). 
+     */
+	scanCfg getScanRange();
 
 	/*!
 	* @brief Set scan data configuration.
