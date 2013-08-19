@@ -61,6 +61,7 @@ class LMSParser {
   std::vector<uint16_t> chan_data;
   std::vector<uint8_t> data;
   int state;
+	float startAngle, stopAngle;
   uint32_t command;
   std::string command_name;
   size_t bytes_flushed;

@@ -10,4 +10,10 @@ public:
 	void draw();
 	
 	vector<ofPtr<ofxSickGrabber> > sick;
+	vector<ofVec2f> positionOffsets;
+	vector<ofVec2f> points;
+	ofMesh pointCloud;
+	float rangeNearAngle;
+	ofRectangle rangeNear;
+	float rangeFarRadius;
 };

@@ -419,12 +419,15 @@ bool LMSParser::parse() {
 
             start_angle = readHexNumberAsU32();
             flush(1); // space
-
+						
             steps = readHexNumberAsU32();
             flush(1); // space
 
             amount_of_data = readHexNumberAsU16();
             flush(1); // space
+						
+						startAngle = start_angle / 10000.;
+						stopAngle = (start_angle + (amount_of_data * steps)) / 10000.;
 
             uint16_t data_n = 0;
             if(channel_content_name == "DIST1") {

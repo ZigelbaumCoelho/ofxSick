@@ -1,5 +1,7 @@
 #include "ofxSick.h"
 
+#define LMS_FAST_RESTART
+
 template <class T> void writeRaw(ofFile& out, T data) {
 	out.write((char*) &data, sizeof(data)); 
 }
@@ -77,6 +79,14 @@ float ofxSick::getAngleOffset() const {
 	return angleOffset;
 }
 
+float ofxSick::getStartAngle() const {
+	return startAngle;
+}
+
+float ofxSick::getStopAngle() const {
+	return stopAngle;
+}
+
 bool ofxSick::isFrameNew() {
 	bool curNewFrame = newFrame;
 	newFrame = false;
@@ -99,11 +109,17 @@ void ofxSick::draw(int gridDivisions, float gridSize) const {
 	ofPushMatrix();
 	ofRotate(invert ? -angleOffset : angleOffset);
 	ofNoFill();
+	ofSetColor(ofColor::red);
+	float lmsRadius = 45;
+	ofCircle(0, 0, lmsRadius);
 	ofSetColor(ofColor::blue);
 	ofLine(0, 0, gridSize, 0); // forward
 	ofSetColor(ofColor::magenta);
+	ofPushMatrix();
+	ofRotate(-90);
 	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(startAngle)); // left bound
 	ofLine(ofVec2f(0, 0), ofVec2f(gridSize, 0).rotate(stopAngle)); // right bound
+	ofPopMatrix();
 	for(int i = 0; i < gridDivisions; i++) {
 		float radius = ofMap(i, -1, gridDivisions - 1, 0, gridSize);
 		ofSetColor(64);
@@ -198,6 +214,7 @@ void ofxSick::analyze() {
 
 ofxSickGrabber::ofxSickGrabber()
 :recording(false)
+,connected(false)
 ,ip("192.168.0.1") {
 }
 
@@ -205,9 +222,13 @@ void ofxSickGrabber::setIp(string ip) {
 	this->ip = ip;
 }
 
+string ofxSickGrabber::getIp() const {
+	return ip;
+}
+
 void ofxSickGrabber::confirmCfg(int curCfg, int targetCfg, const string& name) {
 	if(curCfg != targetCfg) {
-		ofLogError("ofxSickGrabber") << "Failed to set " << name << " @ " << ip; 
+		ofLogError("ofxSickGrabber") << "Failed to set " << name << " @ " << ip << " from " << curCfg << " to " << targetCfg;
 	}
 }
 
@@ -219,28 +240,34 @@ void ofxSickGrabber::connect() {
 		return;
 	}
 	
+	connected = true;
+	
 	ofLogVerbose("ofxSickGrabber") << "Logging in.";
 	laser.login();
 	
+#ifndef LMS_FAST_RESTART
 	laser.stopMeas(); // unnecessary?
+#endif
 	
 	scanCfg targetCfg;
-	targetCfg.angleResolution = angularResolution * 1000;
 	targetCfg.scaningFrequency = scanningFrequency * 100;
-	targetCfg.startAngle = startAngle * 10000; // 0 defaults to -45 * 10000.
-	targetCfg.stopAngle = stopAngle * 10000; // 0 defaults to 225 * 10000.
+	targetCfg.angleResolution = angularResolution * 10000;
+	targetCfg.startAngle = startAngle * 10000.; // 0 defaults to -45 * 10000.
+	targetCfg.stopAngle = stopAngle * 10000.; // 0 defaults to 225 * 10000.
 	
-	ofLogVerbose("ofxSickGrabber") << "Setting new scan configuration.";
 	laser.setScanCfg(targetCfg);
+	ofLogVerbose("ofxSickGrabber") << "setScanCfg: " << scanningFrequency << "Hz at " << angularResolution << "deg, from " << startAngle << "deg to " << stopAngle << "deg";
 	
 	ofLogVerbose("ofxSickGrabber") << "Updating current scan configuration.";
 	scanCfg curCfg = laser.getScanCfg();
-	
+
+#if 0
 	scanningFrequency = curCfg.scaningFrequency / 100.;
 	angularResolution = curCfg.angleResolution / 10000.;
 	startAngle = curCfg.startAngle / 10000.;
-	stopAngle = curCfg.stopAngle / 10000.;	
-	ofLogVerbose("ofxSickGrabber") << scanningFrequency << "Hz at " << angularResolution << "deg, from " << startAngle << "deg to " << stopAngle << "deg";
+	stopAngle = curCfg.stopAngle / 10000.;
+	ofLogVerbose("ofxSickGrabber") << "getScanCfg: " << scanningFrequency << "Hz at " << angularResolution << "deg, from " << startAngle << "deg to " << stopAngle << "deg";
+#endif
 	
 	confirmCfg(curCfg.angleResolution, targetCfg.angleResolution, "angular resolution");
 	confirmCfg(curCfg.scaningFrequency, targetCfg.scaningFrequency, "scanning frequency");
@@ -280,18 +307,24 @@ void ofxSickGrabber::connect() {
 void ofxSickGrabber::disconnect() {
 	ofLogVerbose("ofxSickGrabber") << "Stopping continuous data transmission.";
 	laser.scanContinous(0);
-	laser.stopMeas();
+#ifndef LMS_FAST_RESTART
+	laser.stopMeas(); // unnecessary?
+#endif
 	ofLogVerbose("ofxSickGrabber") << "Disconnecting.";
 	laser.disconnect();
 }
 
 void ofxSickGrabber::threadedFunction() {
 	connect();
+	if(!connected) {
+		return;
+	}
 	while(isThreadRunning()) {
 		//unsigned long start = ofGetSystemTime();
 		scanData data;
 		laser.getData(data);
 		lock();
+		setAngleRange(laser.parser.startAngle, laser.parser.stopAngle);
 		scanBack.first.distance.assign(data.dist1, data.dist1 + data.dist_len1);
 		scanBack.first.brightness.assign(data.rssi1, data.rssi1 + data.rssi_len1);
 		scanBack.second.distance.assign(data.dist2, data.dist2 + data.dist_len2);

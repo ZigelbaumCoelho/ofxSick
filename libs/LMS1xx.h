@@ -295,13 +295,14 @@ public:
 	*
 	*/
 	void startDevice();
+	
+	LMSParser parser;
 
 private:
 	bool connected;
 	bool debug;
 
 	int sockDesc;
-	LMSParser parser;
 };
 
 #endif /* LMS1XX_H_ */

@@ -28,6 +28,9 @@ public:
 	void setInvert(bool invert);
 	void setAngleOffset(float angleOffset);
 	float getAngleOffset() const;
+	float getStartAngle() const;
+	float getStopAngle() const;
+	bool getInvert() const;
 	
 	const vector<unsigned short>& getDistanceFirst() const;
 	const vector<unsigned short>& getBrightnessFirst() const;
@@ -59,6 +62,7 @@ class ofxSickGrabber : public ofxSick {
 public:
 	ofxSickGrabber();
 	void setIp(string ip);
+	string getIp() const;
 	void startRecording();
 	void stopRecording(string filename);
 	
@@ -66,7 +70,7 @@ protected:
 	LMS1xx laser;
 	string ip;
 	
-	bool recording;
+	bool recording, connected;
 	vector<ScanData> recordedData;
 	
 	void connect();

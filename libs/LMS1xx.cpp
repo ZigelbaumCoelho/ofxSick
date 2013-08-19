@@ -80,12 +80,12 @@ void LMS1xx::startMeas() {
 	write(sockDesc, buf, strlen(buf));
 	
 	int len = read(sockDesc, buf, 100);
-	//	if (buf[0] != 0x02)
-	//		std::cout << "invalid packet recieved" << std::endl;
-	//	if (debug) {
-	//		buf[len] = 0;
-	//		std::cout << buf << std::endl;
-	//	}
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sMN LMCstartmeas return: " << buf << std::endl;
+	}
 }
 
 void LMS1xx::stopMeas() {
@@ -95,12 +95,12 @@ void LMS1xx::stopMeas() {
 	write(sockDesc, buf, strlen(buf));
 	
 	int len = read(sockDesc, buf, 100);
-	//	if (buf[0] != 0x02)
-	//		std::cout << "invalid packet recieved" << std::endl;
-	//	if (debug) {
-	//		buf[len] = 0;
-	//		std::cout << buf << std::endl;
-	//	}
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sMN LMCstopmeas return: " << buf << std::endl;
+	}
 }
 
 status_t LMS1xx::queryStatus() {
@@ -110,12 +110,12 @@ status_t LMS1xx::queryStatus() {
 	write(sockDesc, buf, strlen(buf));
 	
 	int len = read(sockDesc, buf, 100);
-	//	if (buf[0] != 0x02)
-	//		std::cout << "invalid packet recieved" << std::endl;
-	//	if (debug) {
-	//		buf[len] = 0;
-	//		std::cout << buf << std::endl;
-	//	}
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sRN STlms return: " << buf << std::endl;
+	}
 	int ret;
 	sscanf((buf + 10), "%d", &ret);
 	
@@ -129,12 +129,12 @@ void LMS1xx::login() {
 	write(sockDesc, buf, strlen(buf));
 	
 	int len = read(sockDesc, buf, 100);
-	//	if (buf[0] != 0x02)
-	//		std::cout << "invalid packet recieved" << std::endl;
-	//	if (debug) {
-	//		buf[len] = 0;
-	//		std::cout << buf << std::endl;
-	//	}
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sMN SetAccessMode return: " << buf << std::endl;
+	}
 }
 
 scanCfg LMS1xx::getScanCfg() const {
@@ -145,12 +145,12 @@ scanCfg LMS1xx::getScanCfg() const {
 	write(sockDesc, buf, strlen(buf));
 	
 	int len = read(sockDesc, buf, 100);
-	//	if (buf[0] != 0x02)
-	//		std::cout << "invalid packet recieved" << std::endl;
-	//	if (debug) {
-	//		buf[len] = 0;
-	//		std::cout << buf << std::endl;
-	//	}
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sRN LMPscancfg return: " << buf << std::endl;
+	}
 	
 	sscanf(buf + 1, "%*s %*s %X %*d %X %X %X", &cfg.scaningFrequency,
 				 &cfg.angleResolution, &cfg.startAngle, &cfg.stopAngle);
@@ -159,15 +159,34 @@ scanCfg LMS1xx::getScanCfg() const {
 
 void LMS1xx::setScanCfg(const scanCfg &cfg) {
 	char buf[100];
-	sprintf(buf, "%c%s %X +1 %X %X %X%c", 0x02, "sMN mLMPsetscancfg",
+	//Set start and stop angle
+	sprintf(buf, "%c%s +1 %X %X %X%c", 0x02, "sWN LMPoutputRange",
+					cfg.angleResolution, cfg.startAngle, cfg.stopAngle, 0x03);
+	write(sockDesc, buf, strlen(buf));
+	int len = read(sockDesc, buf, 100);
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sWN LMPoutputRange return: " << buf << std::endl;
+	}
+	
+	// set scanning frequency and angle resolution
+	//char buf[100];
+	sprintf(buf, "%c%s %X 1 %X %X %X%c", 0x02, "sMN mLMPsetscancfg",
 					cfg.scaningFrequency, cfg.angleResolution, cfg.startAngle,
 					cfg.stopAngle, 0x03);
-	
 	write(sockDesc, buf, strlen(buf));
-	
-	int len = read(sockDesc, buf, 100);
-	
+	//int
+	len = read(sockDesc, buf, 100);
 	buf[len - 1] = 0;
+	
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sMN mLMPsetscancfg return: " << buf << std::endl;
+	}
 }
 
 void LMS1xx::setScanDataCfg(const scanDataCfg &cfg) {
@@ -182,6 +201,13 @@ void LMS1xx::setScanDataCfg(const scanDataCfg &cfg) {
 	
 	int len = read(sockDesc, buf, 100);
 	buf[len - 1] = 0;
+	
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sWN LMDscandatacfg return: " << buf << std::endl;
+	}
 }
 
 void LMS1xx::scanContinous(int start) {
@@ -246,8 +272,7 @@ void LMS1xx::getData(scanData& data) {
 				ofLogError() << "no more data available";
 			}
 		}
-	} else { // no more sockets available
-		ofLogError() << "no more sockets available";
+	} else { // sockets unavailable
 	}
 }
 
@@ -258,12 +283,12 @@ void LMS1xx::saveConfig() {
 	write(sockDesc, buf, strlen(buf));
 	
 	int len = read(sockDesc, buf, 100);
-	//	if (buf[0] != 0x02)
-	//		std::cout << "invalid packet recieved" << std::endl;
-	//	if (debug) {
-	//		buf[len] = 0;
-	//		std::cout << buf << std::endl;
-	//	}
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sMN mEEwriteall return: " << buf << std::endl;
+	}
 }
 
 void LMS1xx::startDevice() {
@@ -273,10 +298,10 @@ void LMS1xx::startDevice() {
 	write(sockDesc, buf, strlen(buf));
 	
 	int len = read(sockDesc, buf, 100);
-	//	if (buf[0] != 0x02)
-	//		std::cout << "invalid packet recieved" << std::endl;
-	//	if (debug) {
-	//		buf[len] = 0;
-	//		std::cout << buf << std::endl;
-	//	}
+	if (buf[0] != 0x02)
+		std::cout << "invalid packet recieved" << std::endl;
+	if (debug) {
+		buf[len] = 0;
+		std::cout << "sMN Run return: " << buf << std::endl;
+	}
 }
