@@ -5,6 +5,11 @@ void testApp::setup() {
 	ofSetFrameRate(120);
 	ofSetCircleResolution(64);
 	ofSetLogLevel(OF_LOG_VERBOSE);
+	sick.setIp("192.168.0.1");
+	sick.setScanningFrequency(25);
+	sick.setAngularResolution(.25);
+	sick.setAngleRange(0, 180);
+	sick.setAngleOffset(45);
 	sick.setup();
 }
 

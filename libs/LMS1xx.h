@@ -24,6 +24,7 @@
 #ifndef LMS1XX_H_
 #define LMS1XX_H_
 
+#include "LMSParser.h"
 #include <string>
 #include <stdint.h>
 
@@ -300,6 +301,7 @@ private:
 	bool debug;
 
 	int sockDesc;
+	LMSParser parser;
 };
 
 #endif /* LMS1XX_H_ */
