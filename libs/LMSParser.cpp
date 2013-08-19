@@ -1,5 +1,7 @@
 #include "LMSParser.h"
 
+//#define DEBUG_LMS
+
 // --------------------------------------------------------
 LMSParser::LMSParser()
   :state(LMS_STATE_NONE)
@@ -347,15 +349,16 @@ bool LMSParser::parse() {
             uint8_t time_info_s = 0; // seconds
             uint32_t time_info_us = 0; // usecs
             uint16_t event_info_flag = 0;
-            
+						
             version = readHexNumberAsU16();
             flush(1); // space
             device_number = readHexNumberAsU16();
             flush(1); // space
             serial_number = readHexNumberAsU32();
             flush(1); // space
-            flush(1); // first status byte (always zero in doc)
-            device_status = readHexNumberAsU8();
+						device_status = readHexNumberAsU8(); // first status byte (always zero in doc)
+            flush(1); // space
+            device_status = readHexNumberAsU8(); // second status byte
             flush(1); // space
             tel_counter = readHexNumberAsU16();
             flush(1); // space
@@ -364,10 +367,6 @@ bool LMSParser::parse() {
             time_since_startup = readHexNumberAsU32();
             flush(1);
             time_of_transmission = readHexNumberAsU32();
-
-            flush(1); // space
-
-            flush(5); // ---------------------------------- WHAT ARE THESE BYTES ? 
             flush(1); // space
 
             // input
@@ -383,7 +382,8 @@ bool LMSParser::parse() {
             flush(1); // space
 
             // reserved
-            flush(2);
+            readHexNumberAsU16();
+            flush(1); // space
             
             scan_freq = readHexNumberAsU32();
             flush(1); // space
@@ -391,7 +391,7 @@ bool LMSParser::parse() {
             measurement_freq = readHexNumberAsU32();
             flush(1); // space
 
-            amount_of_encoder = readHexNumberAsU16();
+            amount_of_encoder = readHexNumberAsU16(); // bad
             flush(1); // space
 
             if(amount_of_encoder != 0) {
@@ -410,6 +410,7 @@ bool LMSParser::parse() {
             flush(5); // name
             flush(1); // space
 
+						// 0x3F800000 is x1, 0x40000000 is x2 
             scale_factor = readHexNumberAsFloat(); // ------------------------ @todo The documentation says that the values need to be scaled ... not implemented that
             flush(1); // space
 
@@ -426,7 +427,7 @@ bool LMSParser::parse() {
             flush(1); // space
 
             uint16_t data_n = 0;
-            if(channel_content_name == " 3F80") {
+            if(channel_content_name == "DIST1") {
               chan_data.clear();
               for(size_t i = 0; i < amount_of_data; ++i) {
                 data_n = readHexNumberAsU16();
@@ -469,7 +470,35 @@ bool LMSParser::parse() {
             if(event_info_flag != 0) {
               ::exit(EXIT_FAILURE);
             }
-            
+						
+#if DEBUG_LMS
+						printf("  + version: %d\n", version);
+            printf("  + device number: %d\n", device_number);
+            printf("  + serial number: %d\n", serial_number);
+            printf("  + device status: %d\n", device_status);
+            printf("  + telegram counter: %d\n", tel_counter);
+            printf("  + scan counter: %d\n", scan_counter);
+            printf("  + time since startup: %u\n", time_since_startup);
+            printf("  + time of transmission: %u\n", time_of_transmission);
+            printf("  + digital input status: %u\n", dig_input_status);
+            printf("  + digital output status: %u\n", dig_output_status);
+            printf("  + scan frequency: %u\n", scan_freq);
+            printf("  + measurement frequency: %u\n", measurement_freq);
+            printf("  + amount of encoder: %d\n", amount_of_encoder);
+            printf("  + encoder position: %d\n", encoder_position);
+            printf("  + encoder speed: %d\n", encoder_speed);
+            printf("  + amount of 16 bit channels: %d\n", amount_of_16bit_channels);
+            printf("  + channel content name: %s\n", channel_content_name.c_str());
+            printf("  + scale factor: %f\n", scale_factor);
+            printf("  + scale factor offset: %f\n", scale_factor_offset);
+            printf("  + start angle: %d\n", start_angle);
+            printf("  + steps: %d\n", steps);
+            printf("  + amount of data: %d\n", amount_of_data);
+            printf("  + amount of 8 bit channels: %d\n", amount_of_8bit_channels);
+            printf("  + output of position data: %d\n", position);
+            printf("  + device name len: %d\n", device_name_len);
+            printf("  + event info flag: %d\n", event_info_flag);
+#endif
             state = LMS_STATE_ETX;
              // ----------------------------------------------------------------------------------------
           } // command == LSM_COMMAND_SSN in "LMDscandata"
