@@ -1,7 +1,5 @@
 #include "LMSParser.h"
 
-#define LMS_DEBUG 0
-
 // --------------------------------------------------------
 LMSParser::LMSParser()
   :state(LMS_STATE_NONE)
@@ -20,10 +18,6 @@ bool LMSParser::parse() {
         for(size_t i = 0; i < data.size(); ++i) {
           if(data[i] == 0x02) {
             state = LMS_STATE_STX;
-#if LMS_DEBUG
-            printf("+ found STX at %ld\n", i);
-            println();
-#endif
             must_continue = true;
             break;
           }
@@ -41,7 +35,6 @@ bool LMSParser::parse() {
       case LMS_STATE_STX: {
         // too small
         if(data.size() < 4) {
-          printf("- not enough data in buffer for LSM_STATE_STX\n");
           return false;
         }
 
@@ -52,8 +45,6 @@ bool LMSParser::parse() {
 
 #if 0
         unsigned char* pp = (unsigned char*) ptr;
-        printf("%02X %02X %02X\n", pp[2], pp[1], pp[0]);
-        printf(">>>>>>>>>>>> %ld <<<<<<<<<<<<\n", bytes_flushed);
 #endif     
 
         switch(command) {
@@ -69,10 +60,6 @@ bool LMSParser::parse() {
           default: {
             // unknown command .. oops
             unsigned char* p = (unsigned char*)ptr;
-            printf("--\n");
-            printf("Unhandled command! %02X%02X%02X, we shouldn't arrive here. The unhandled command is:\n", ptr[0], ptr[1], ptr[2]);
-            println();
-            printf("--\n");
             return false;
           }
         };
@@ -104,7 +91,6 @@ bool LMSParser::parse() {
             break;
           }
           default: {
-            printf("Unhandled command type.\n");
             return false;
           }
         };
@@ -113,7 +99,6 @@ bool LMSParser::parse() {
           continue;
         }
         else {
-          printf("- not enough data in buffer for LSM_STATE_COMMAND\n");
           command_name.clear();
           return false;
         }
@@ -121,31 +106,22 @@ bool LMSParser::parse() {
 
       case LMS_STATE_COMMAND_PARAM: {
         if(data.size() == 0) {
-#if LMS_DEBUG
-          printf("- not enough data in buffer for LSM_STATE_COMMAND_PARAM\n");
-#endif
           return false;
         }
 
         if(command_name == "SetAccessMode") {
-          printf("+ %s\n", command_name.c_str());
           if(data[0] == 0x31) {
-            printf("  + SetAccessMode: OK\n");
           }
           else if (data[0] == 0x30) {
-            printf("  - SetAccessMode: ERROR.\n");
           }
 
           flush(1);
           state = LMS_STATE_ETX;
         }
         else if(command_name == "LMCstopmeas") {
-          printf("+ %s\n", command_name.c_str());
           if(data[0] == 0x031) {
-            printf("  + LMCstopmeas: OK\n");
           }
           else {
-            printf("  - LMCStopmeas: NOT ALLOWED\n");
           }
 
           flush(1);
@@ -161,20 +137,11 @@ bool LMSParser::parse() {
             }
           }
           if(!has_enough) {
-            printf("- not enough data in buffer for LSM_STATE_COMMAND_PARAM - mLMPsetscancfg\n");
             return false;
           }
 
-          printf("+ %s\n", command_name.c_str());
 
           switch(data[0]) {
-            case 0x30: {  printf("  + status code: OK\n");                            break; } 
-            case 0x31: {  printf("  - status code: Frequency Error\n");               break; }
-            case 0x32: {  printf("  - status code: Resolution Error\n");              break; }
-            case 0x33: {  printf("  - status code: Resn. and Scn. Error\n");          break; }
-            case 0x34: {  printf("  - status code: Scan area Error.\n");              break; }
-            case 0x35: {  printf("  - status code: Other Error.\n");                  break; }
-            default:   {  printf("  - status code: UNKNOWN ERROR! - INVALID DATA\n"); break; } 
             break;
           }
 
@@ -196,10 +163,6 @@ bool LMSParser::parse() {
             flush(1); // space
             stop_angle = readHexNumberAsI32();
 
-            printf("  + scan_freq: %d \n", scan_freq);
-            printf("  + angle_res: %d \n", angle_res);
-            printf("  + start_angle: %d\n", start_angle);
-            printf("  + stop_angle: %d\n", stop_angle);
 
             state = LMS_STATE_ETX;
           }
@@ -214,9 +177,6 @@ bool LMSParser::parse() {
             }
           }
           if(!has_enough) {
-#if LMS_DEBUG
-            printf("- not enough data in buffer for LSM_STATE_COMMAND_PARAM - LMPscancfg\n");
-#endif
             return false;
           }
 
@@ -236,29 +196,19 @@ bool LMSParser::parse() {
           flush(1);
           stop_angle = readHexNumberAsI32();
 
-          printf("+ %s\n", command_name.c_str());
-          printf("  + scan_freq: %d \n", scan_freq);
-          printf("  + angle_res: %d \n", angle_res);
-          printf("  + start_angle: %d\n", start_angle);
-          printf("  + stop_angle: %d\n", stop_angle);
           
           state = LMS_STATE_ETX;
           
         }
         else if(command_name == "LMDscandatacfg") {
-          printf("+ %s\n", command_name.c_str());
           state = LMS_STATE_ETX;
         }
         else if(command_name == "LMCstartmeas") {
-          printf("+ %s\n", command_name.c_str());
           if(data[0] == 0x30) {
-            printf("  - statuscode: OK\n");
           }
           else if(data[1] == 0x31) {
-            printf("  - statuscode: NOT ALLOWED\n");
           }
           else {
-            printf("  - statuscode: UNHANDLED STATUS CODE\n");
           }
           flush(1);
           state = LMS_STATE_ETX;
@@ -273,7 +223,6 @@ bool LMSParser::parse() {
             }
           }
           if(!has_enough) {
-            printf("- not enough data in buffer for LSM_STATE_COMMAND_PARAM - STLms\n");
             return false;
           }
 
@@ -327,16 +276,7 @@ bool LMSParser::parse() {
           flush(1); // space 
 
           led3 = readHexNumberAsU16();
-#if LMS_DEBUG
-          printf("+ %s\n", command_name.c_str());
-          printf("  + status_code: %s\n", stlmsStatusCodeToString(status_code).c_str());
-          printf("  + op.temp. range: %d\n", op_temp);
-          printf("  + time: %d:%d:%d\n", time_h, time_m, time_s);
-          printf("  + date: %02d.%02d.%04d\n", date_d, date_m, 2000 +date_y);
-          printf("  + led1: %d\n", led1);
-          printf("  + led2: %d\n", led2);
-          printf("  + led3: %d\n", led3);
-#endif
+
           state = LMS_STATE_ETX;
 
         } // STLms
@@ -344,15 +284,11 @@ bool LMSParser::parse() {
 
           if(command == LSM_COMMAND_SEA) {
 
-            printf("+ %s\n", command_name.c_str());
             if(data[0] == 0x30) {
-              printf("  + stop\n");
             }
             else if(data[0] == 0x31) {
-              printf("  + start\n");
             }
             else {
-              printf("  - UNKNOWN STATE\n");
               return false;
             }
             flush(1);
@@ -369,9 +305,6 @@ bool LMSParser::parse() {
               }
             }
             if(!has_enough) {
-#if LMS_DEBUG
-              printf("- not enough data in buffer for LSM_STATE_COMMAND_PARAM - LMDscandata\n");
-#endif
               return false;
             }
 
@@ -510,7 +443,6 @@ bool LMSParser::parse() {
             
             amount_of_8bit_channels = readHexNumberAsU16();
             if(amount_of_8bit_channels > 0) {
-              printf("ERROR: The amount of 8 bit channels is not 0. We need to implement this.\n");
               ::exit(EXIT_FAILURE);
             }
             flush(1); // space
@@ -520,7 +452,6 @@ bool LMSParser::parse() {
             
             device_name_flag = readHexNumberAsU16();
             if(device_name_flag == 0x01) {
-              printf("ERROR: There is a device name in the data. We need to implement parsing this.\n");
               ::exit(EXIT_FAILURE);
             }
             flush(1); // space
@@ -530,54 +461,23 @@ bool LMSParser::parse() {
 
             time_info_flag = readHexNumberAsU16();
             if(time_info_flag != 0) {
-              printf("ERROR: The time info flag is not 0. We did not yet implement parsing of the time values.\n");
               ::exit(EXIT_FAILURE);
             }
             flush(1); // space
 
             event_info_flag = readHexNumberAsU16();
             if(event_info_flag != 0) {
-              printf("ERROR: The event info flag is not 0. We did not yet implement parsing of the event info.\n");
               ::exit(EXIT_FAILURE);
             }
-#if LMS_DEBUG
-            printf("  + version: %d\n", version);
-            printf("  + device number: %d\n", device_number);
-            printf("  + serial number: %d\n", serial_number);
-            printf("  + device status: %d\n", device_status);
-            printf("  + telegram counter: %d\n", tel_counter);
-            printf("  + scan counter: %d\n", scan_counter);
-            printf("  + time since startup: %d\n", time_since_startup);
-            printf("  + time of transmission: %d\n", time_of_transmission);
-            printf("  + digital input status: %d\n", dig_input_status);
-            printf("  + digital output status: %d\n", dig_output_status);
-            printf("  + scan frequency: %d\n", scan_freq);
-            printf("  + measurement frequency: %d\n", measurement_freq);
-            printf("  + amount of encoder: %d\n", amount_of_encoder);
-            printf("  + encoder position: %d\n", encoder_position);
-            printf("  + encoder speed: %d\n", encoder_speed);
-            printf("  + amount of 16 bit channels: %d\n", amount_of_16bit_channels);
-            printf("  + channel content name: %s\n", channel_content_name.c_str());
-            printf("  + scale factor: %f\n", scale_factor);
-            printf("  + scale factor offset: %f\n", scale_factor_offset);
-            printf("  + start angle: %d\n", start_angle);
-            printf("  + steps: %d\n", steps);
-            printf("  + amount of data: %d\n", amount_of_data);
-            printf("  + amount of 8 bit channels: %d\n", amount_of_8bit_channels);
-            printf("  + output of position data: %d\n", position);
-            printf("  + device name len: %d\n", device_name_len);
-            printf("  + event info flag: %d\n", event_info_flag);
-#endif            
+            
             state = LMS_STATE_ETX;
              // ----------------------------------------------------------------------------------------
           } // command == LSM_COMMAND_SSN in "LMDscandata"
           else {
-            printf("ERROR: we're trying to handle LMDscandata but the command code is invalid.\n");
           }
 
         } // command_name == "LMDscandata"
         else {
-          printf("- Unhandled command name: '%s', at: %ld\n", command_name.c_str(), bytes_flushed);
           return false;
         }
 
@@ -589,18 +489,15 @@ bool LMSParser::parse() {
       case LMS_STATE_ETX: {
 
         if(data.size() == 0) {
-          printf("- not enough data in buffer for LSM_STATE_ETX\n");
           return false;
         }
         if(data[0] != 0x03) {
-          printf("- ERROR: something went wrong while parsing; we should have read a 0x03 value but read: %02X\n", data[0]);
           ::exit(0);
           return false;
         }
 
         flush(1); // space
 
-        printf("\n");
 
         // start over
         state = LMS_STATE_NONE;
@@ -608,7 +505,6 @@ bool LMSParser::parse() {
       }
 
       default: {
-        printf("Unhandled state.\n");
         return false;
       }
 
@@ -625,7 +521,6 @@ std::string LMSParser::readHexNumberAsString(size_t maxChars, uint8_t stop) {
   }
 
   if(maxChars == 0) {
-    printf("ERROR: maxChars is 0\n");
     return "";
   }
 
@@ -742,31 +637,12 @@ float LMSParser::readHexNumberAsFloat(uint8_t stop) {
 void LMSParser::flush(size_t nbytes) {
 
   if(nbytes > data.size()) {
-    printf("ERROR: trying to flush more bytes then there are in the buffer!\n");
     return;
   }
 
   bytes_flushed += nbytes;
 
   data.erase(data.begin(), data.begin() + nbytes);
-}
-
-void LMSParser::println() {
-  size_t m = 40;
-  if(data.size() < 40) {
-    m = data.size();
-  }
-
-  printf("\n\n");
-  for(size_t i = 0; i < m; ++i) {
-    printf("%02X ", data[i]);
-  }
-  printf("\n");
-  for(size_t i = 0; i < m; ++i) {
-    printf("%2c ", (char)data[i]);
-  }
-  printf("\n\n");
-
 }
 
 std::string LMSParser::stlmsStatusCodeToString(uint16_t code) {
