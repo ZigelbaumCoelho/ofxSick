@@ -2,6 +2,8 @@
 
 #include "ofMain.h"
 #include "ofxSick.h"
+#include "ofxSickTracker.h"
+#include "ofxOsc.h"
 
 class testApp : public ofBaseApp {
 public:
@@ -16,4 +18,9 @@ public:
 	float rangeNearAngle;
 	ofRectangle rangeNear;
 	float rangeFarRadius;
+	
+	ofRectangle trackingRegion;
+	ofxSickTracker<ofxSickFollower> tracker;
+	
+	ofxOscSender osc;
 };

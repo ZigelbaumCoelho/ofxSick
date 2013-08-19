@@ -61,13 +61,16 @@ public:
 		ofRect(region);
 		ofPopStyle();
 	}
-	void update(ofxSick& sick) {
+	void update(const vector<ofVec2f>& points) {
 		if(useKmeans) {
-			updateKmeans(sick);
+			updateKmeans(points);
 		} else {
-			updateNaive(sick);
+			updateNaive(points);
 		}
-		ofxCv::PointTrackerFollower<F>::track(clusters);
+		ofxCv::PointTrackerFollower<F>::track(clusters);		
+	}
+	void update(ofxSick& sick) {
+		update(sick.getPointsFirst());
 	}
 	unsigned int size() const {
 		return clusters.size();
@@ -86,8 +89,7 @@ protected:
 	bool useKmeans;
 	int minClusterSize, maxPointDistance;
 	
-	void updateNaive(ofxSick& sick) {
-		const vector<ofVec2f>& points = sick.getPointsFirst();
+	void updateNaive(const vector<ofVec2f>& points) {
 		if(points.size() > 0) {
 			vector< vector<ofVec2f> > all;
 			for(int i = 0; i < points.size(); i++) {
@@ -126,10 +128,9 @@ protected:
 		}
 	}
 	
-	void updateKmeans(ofxSick& sick) {
+	void updateKmeans(const vector<ofVec2f>& points) {
 		// build samples vector for all points within the bounds
 		vector<cv::Point2f> samples;
-		const vector<ofVec2f>& points = sick.getPointsFirst();
 		for(int i = 0; i < points.size(); i++) {
 			if(region.inside(points[i])) {
 				samples.push_back(ofxCv::toCv(points[i]));

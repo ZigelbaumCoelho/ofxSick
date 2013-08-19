@@ -1,6 +1,6 @@
 #include "ofxSick.h"
 
-#define LMS_FAST_RESTART
+//#define LMS_FAST_RESTART
 
 template <class T> void writeRaw(ofFile& out, T data) {
 	out.write((char*) &data, sizeof(data)); 
@@ -226,6 +226,10 @@ string ofxSickGrabber::getIp() const {
 	return ip;
 }
 
+bool ofxSickGrabber::getConnected() const {
+	return connected;
+}
+
 void ofxSickGrabber::confirmCfg(int curCfg, int targetCfg, const string& name) {
 	if(curCfg != targetCfg) {
 		ofLogError("ofxSickGrabber") << "Failed to set " << name << " @ " << ip << " from " << curCfg << " to " << targetCfg;
@@ -239,8 +243,6 @@ void ofxSickGrabber::connect() {
 		ofLogError("ofxSickGrabber") << "Connection failed @ " << ip;
 		return;
 	}
-	
-	connected = true;
 	
 	ofLogVerbose("ofxSickGrabber") << "Logging in.";
 	laser.login();
@@ -302,6 +304,8 @@ void ofxSickGrabber::connect() {
 	}
 	ofLogVerbose("ofxSickGrabber") << "Ready, starting continuous data transmission.";
 	laser.scanContinous(1);
+	
+	connected = true;
 }
 
 void ofxSickGrabber::disconnect() {

@@ -63,6 +63,7 @@ public:
 	ofxSickGrabber();
 	void setIp(string ip);
 	string getIp() const;
+	bool getConnected() const;
 	void startRecording();
 	void stopRecording(string filename);
 	

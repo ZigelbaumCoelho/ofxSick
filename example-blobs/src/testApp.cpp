@@ -12,11 +12,11 @@ void testApp::setup() {
 	recording = false;
 	
 	grabber.setup();
-	player.load("recording.lms");
+	//player.load("recording.lms");
 	
-	sick = &player;
+	sick = &grabber;
 	
-	trackingRegion.set(1200, -800, 1200, 1600);
+	trackingRegion.setFromCenter(0, 0, 2000, 2000);
 	
 	tracker.setMaximumDistance(100);
 	tracker.setPersistence(10);
@@ -38,6 +38,7 @@ void testApp::draw() {
 	ofPushMatrix();
 	ofTranslate(20, 20);
 	ofSetColor(255);
+	ofNoFill();
 	ofCircle(0, 0, 7);
 	ofDrawBitmapString(ofToString(tracker.size()) + " clusters", -4, 4);
 	ofPopMatrix();
